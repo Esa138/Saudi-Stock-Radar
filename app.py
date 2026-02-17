@@ -7,16 +7,41 @@ from plotly.subplots import make_subplots
 import warnings
 
 warnings.filterwarnings('ignore')
-st.set_page_config(page_title="منصة ماسة 💎 | للتحليل الكمي", layout="wide", page_icon="💎")
-st.title("💎 منصة ماسة (Masa) للتحليل الكمي واصطياد الفرص")
 
-col1, col2 = st.columns([1, 3])
-with col1:
-    ticker = st.text_input("أدخل رمز السهم (مثال: 2222.SR, 1120.SR, AAPL)", value="1120.SR")
-    analyze_btn = st.button("تحليل شامل 🔍")
+# ==========================================
+# 💎 إعدادات هوية "ماسة"
+# ==========================================
+st.set_page_config(page_title="منصة ماسة 💎 | Masa Quant", layout="wide", page_icon="💎")
+
+# --- القائمة الجانبية (Sidebar) ذات الطابع الاحترافي ---
+with st.sidebar:
+    st.markdown("<h1 style='text-align: center; color: #00d2ff;'>💎 مـاسـة</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>Masa Quant Platform</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    st.markdown("### 🔍 لوحة التحكم:")
+    ticker = st.text_input("أدخل رمز السهم (مثال: 4210.SR):", value="4210.SR")
+    analyze_btn = st.button("استخراج الألماس 💎", use_container_width=True)
+    
+    st.markdown("---")
+    st.markdown("### 🛠️ قدرات ماسة الحصرية:")
+    st.markdown("- ✅ **رادار السيولة** (مفعل)")
+    st.markdown("- ✅ **زيرو انعكاس** (مفعل)")
+    st.markdown("- ✅ **عداد الزخم** (مفعل)")
+    st.markdown("- 🔒 **الماسح الآلي للسوق** (قريباً)")
+    st.markdown("- 🔒 **تنبيهات الواتساب** (قريباً)")
+    
+    st.markdown("---")
+    st.info("💡 **نسخة العرض التجريبية (Beta)**\nهذه النسخة مخصصة لاختبار قوة الخوارزميات قبل الإطلاق الرسمي.")
+    st.markdown("<p style='text-align: center; font-size: 12px; color: gray; margin-top: 20px;'>© 2026 Masa Quant Trading</p>", unsafe_allow_html=True)
+
+# --- الواجهة الرئيسية ---
+st.markdown("<h2 style='text-align: center;'>💎 غرفة عمليات ماسة (Masa Dashboard)</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>استخرج الفرص الماسية بناءً على السيولة، الزخم، وتقنية زيرو انعكاس.</p>", unsafe_allow_html=True)
+st.markdown("---")
 
 if analyze_btn or ticker:
-    with st.spinner(f"جاري دمج الزخم مع زيرو انعكاس لسهم {ticker}..."):
+    with st.spinner(f"💎 محرك ماسة يقوم بالمسح الخوارزمي لسهم {ticker}..."):
         df = yf.Ticker(ticker).history(period="2y") 
         
         if df.empty:
@@ -30,7 +55,7 @@ if analyze_btn or ticker:
             # 1. حسابات الزخم والأداء التراكمي
             # ==========================================
             df['1d_%'] = close.pct_change(1) * 100
-            df['3d_%'] = close.pct_change(3) * 100  # الإضافة الجديدة للـ 3 أيام
+            df['3d_%'] = close.pct_change(3) * 100 
             df['5d_%'] = close.pct_change(5) * 100
             df['10d_%'] = close.pct_change(10) * 100
             
@@ -56,11 +81,10 @@ if analyze_btn or ticker:
                 else: return f"⚪ {val:.2f}% ({cat})"
                 
             df['Load_Diff_1D'] = df['1d_%'].apply(categorize)
-            df['Load_Diff_3D'] = df['3d_%'].apply(categorize) # الإضافة الجديدة
+            df['Load_Diff_3D'] = df['3d_%'].apply(categorize) 
             df['Load_Diff_5D'] = df['5d_%'].apply(categorize)
             df['Load_Diff_10D'] = df['10d_%'].apply(categorize)
             
-            # خطوط الاختراقات
             df['High_3D'] = high.rolling(3).max().shift(1)
             df['Low_3D'] = low.rolling(3).min().shift(1)
 
@@ -71,7 +95,6 @@ if analyze_btn or ticker:
             df['SMA_50'] = close.rolling(window=50).mean()
             df['Vol_SMA_20'] = df['Volume'].rolling(window=20).mean()
             
-            # RSI
             delta_rsi = close.diff()
             up = delta_rsi.clip(lower=0)
             down = -1 * delta_rsi.clip(upper=0)
@@ -80,12 +103,10 @@ if analyze_btn or ticker:
             rs = ema_up / ema_down
             df['RSI'] = 100 - (100 / (1 + rs))
 
-            # زيرو انعكاس (300 شمعة)
             zr_period = 300 
             df['ZR_High'] = high.rolling(window=zr_period, min_periods=10).max().shift(1)
             df['ZR_Low'] = low.rolling(window=zr_period, min_periods=10).min().shift(1)
 
-            # الدعوم والمقاومات
             pivot_len = 10
             df['Pivot_High'] = high[high == high.rolling(window=2*pivot_len+1, center=True).max()]
             df['Pivot_Low'] = low[low == low.rolling(window=2*pivot_len+1, center=True).min()]
@@ -93,7 +114,7 @@ if analyze_btn or ticker:
             recent_sup = df['Pivot_Low'].dropna().tail(3)
 
             # ==========================================
-            # 3. الخلاصة الآلية أعلى الموقع
+            # 3. الخلاصة الآلية (صندوق القرار)
             # ==========================================
             last_close = close.iloc[-1]
             prev_close = close.iloc[-2]
@@ -115,7 +136,7 @@ if analyze_btn or ticker:
             elif last_close <= last_zr_low * 1.05: zr_status, zr_color = "يختبر قاع زيرو", "💎"
             else: zr_status, zr_color = "في منتصف القناة", "⚖️"
 
-            st.markdown(f"### 🤖 قراءة الرادار الشاملة لسهم ({ticker}):")
+            st.markdown(f"### 🤖 قراءة ماسة الآلية لسهم ({ticker}):")
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("الإغلاق الأخير", f"{last_close:.2f}", f"{pct_change:.2f}%")
             m2.metric(f"الترند العام {trend_color}", trend)
@@ -130,22 +151,18 @@ if analyze_btn or ticker:
             fig = make_subplots(rows=3, cols=1, shared_xaxes=True, 
                                 vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
 
-            # الشموع
             fig.add_trace(go.Candlestick(x=df_plot.index, open=df_plot['Open'], high=df_plot['High'], 
                                          low=df_plot['Low'], close=df_plot['Close'], name='السعر'), row=1, col=1)
             
-            # زيرو انعكاس
             fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_High'], line=dict(color='white', width=2, dash='dot'), name='سقف زيرو'), row=1, col=1)
             fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_Low'], line=dict(color='orange', width=2, dash='dot'), name='قاع زيرو'), row=1, col=1)
 
-            # علامات الاختراق
             bo_up_3d = df_plot[df_plot['Close'] > df_plot['High_3D']]
             fig.add_trace(go.Scatter(x=bo_up_3d.index, y=bo_up_3d['Close'], mode='markers', marker=dict(symbol='triangle-up', size=14, color='green', line=dict(width=1, color='black')), name='اختراق 🔼'), row=1, col=1)
             
             bo_down_3d = df_plot[df_plot['Close'] < df_plot['Low_3D']]
             fig.add_trace(go.Scatter(x=bo_down_3d.index, y=bo_down_3d['Close'], mode='markers', marker=dict(symbol='triangle-down', size=14, color='red', line=dict(width=1, color='black')), name='كسر 🔽'), row=1, col=1)
 
-            # الدعوم والمقاومات
             for p_idx, p_val in recent_res.items():
                 if p_idx in df_plot.index or p_idx < df_plot.index[0]:
                     fig.add_hline(y=p_val, line_dash="solid", row=1, col=1, line_color="#2196f3", line_width=1.5, opacity=0.8)
@@ -153,29 +170,27 @@ if analyze_btn or ticker:
                 if t_idx in df_plot.index or t_idx < df_plot.index[0]:
                     fig.add_hline(y=t_val, line_dash="solid", row=1, col=1, line_color="#ca8a04", line_width=1.5, opacity=0.8)
 
-            # السيولة
             colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]
             fig.add_trace(go.Bar(x=df_plot.index, y=df_plot['Volume'], marker_color=colors, name='السيولة'), row=2, col=1)
 
-            # RSI
             fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['RSI'], line=dict(color='purple', width=2), name='RSI'), row=3, col=1)
             fig.add_hline(y=70, line_dash="dot", row=3, col=1, line_color="red")
             fig.add_hline(y=30, line_dash="dot", row=3, col=1, line_color="green")
 
-            fig.update_layout(title=f'الشارت الشامل (زخم + زيرو + سيولة) | ({ticker})', height=850, 
+            fig.update_layout(title=f'💎 شارت ماسة الشامل | ({ticker})', height=850, 
                               template='plotly_dark', showlegend=False, xaxis_rangeslider_visible=False)
             st.plotly_chart(fig, use_container_width=True)
             
             # ==========================================
             # 5. جدول الزخم والأداء التراكمي الشامل
             # ==========================================
-            st.markdown("### 📋 جدول الزخم والأداء التراكمي (مع السيولة)")
+            st.markdown("### 📋 سجل ماسة التراكمي للزخم والسيولة")
             table = pd.DataFrame({
                 'التاريخ': df.index.strftime('%Y-%m-%d'),
                 'الإغلاق': df['Close'].round(2),
                 'عداد الاتجاه': df['Counter'].astype(int),
                 'تغير 1 يوم': df['Load_Diff_1D'],
-                'تراكمي 3 أيام': df['Load_Diff_3D'], # تم إضافته هنا
+                'تراكمي 3 أيام': df['Load_Diff_3D'], 
                 'تراكمي 5 أيام': df['Load_Diff_5D'],
                 'تراكمي 10 أيام': df['Load_Diff_10D'],
                 'حجم السيولة': df['Volume'].apply(lambda x: f"{x:,}")

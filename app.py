@@ -10,9 +10,9 @@ import datetime
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 💎 1. إعدادات الهوية الاحترافية
+# 💎 1. إعدادات الهوية الاحترافية (إخفاء القائمة الجانبية تماماً)
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | Masa Quant", layout="wide", page_icon="💎")
+st.set_page_config(page_title="منصة ماسة 💎 | Masa Quant", layout="wide", page_icon="💎", initial_sidebar_state="collapsed")
 
 custom_css = """
 <style>
@@ -34,6 +34,19 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .th-red { background-color: #c62828 !important; }
 .th-blue { background-color: #1565c0 !important; }
 .th-gray { background-color: #424242 !important; }
+
+/* إخفاء زر السهم الجانبي المزعج تماماً */
+[data-testid="collapsedControl"] { display: none; }
+
+/* تصميم فخم لصندوق البحث المركزي */
+.search-container {
+    background: linear-gradient(145deg, #1e2129, #15171e);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid #2d303e;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -65,7 +78,6 @@ def scan_market():
                 
                 sym = tk.replace('.SR', '')
                 
-                # توحيد اسم العمود إلى "التاريخ" لتفادي الخطأ
                 if last_c > last_h3 and prev_c <= prev_h3: breakouts.append({"السهم": sym, "التاريخ": today_str})
                 if last_c < last_l3 and prev_c >= prev_l3: breakdowns.append({"السهم": sym, "التاريخ": today_str})
                     
@@ -84,25 +96,21 @@ def scan_market():
             
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(up_trends), pd.DataFrame(down_trends)
 
-# --- القائمة الجانبية ---
-with st.sidebar:
-    st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 مـاسـة</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray; margin-top: -15px;'>Masa Quant Platform</p>", unsafe_allow_html=True)
-    st.markdown("---")
-    ticker = st.text_input("أدخل رمز السهم للتحليل العميق:", value="4165.SR")
-    analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
-    st.markdown("---")
-    st.markdown("### 🛠️ باقة الاستثمار (Pro):")
-    st.markdown("- ✅ رادار السيولة وزيرو")
-    st.markdown("- ✅ **مخطط الاختراقات التفاعلي**")
-    st.markdown("- ✅ **الماسح الآلي للسوق 🚀**")
-    st.markdown("---")
-    st.info("💡 **حالة السيرفر:** متصل 🟢\n\n**قوة الخوارزمية:** 100% ⚡")
-    st.markdown("<p style='text-align: center; font-size: 11px; color: #555; margin-top: 30px;'>© 2026 Masa Technologies | V9.1 Stable</p>", unsafe_allow_html=True)
-
 # --- الواجهة الرئيسية ---
-st.markdown("<h2 style='text-align: center;'>💎 غرفة عمليات ماسة (Masa Dashboard)</h2>", unsafe_allow_html=True)
-st.markdown("---")
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>الرادار الخوارزمي لاصطياد الفرص وتتبع السيولة الذكية</p>", unsafe_allow_html=True)
+
+# ==========================================
+# 🔍 3. صندوق البحث المركزي (الحل الجذري)
+# ==========================================
+st.markdown("<div class='search-container'>", unsafe_allow_html=True)
+col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
+with col_search1:
+    # المربع الجديد الواضح في المنتصف
+    ticker = st.text_input("🎯 رمز السهم:", value="4165.SR", label_visibility="collapsed")
+with col_search2:
+    analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
+st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
     with st.spinner(f"جاري جلب بيانات {ticker} ومسح السوق..."):
@@ -110,7 +118,7 @@ if analyze_btn or ticker:
         df_bup, df_bdn, df_tup, df_tdn = scan_market()
         
         if df.empty:
-            st.error("❌ السهم غير موجود، تأكد من الرمز.")
+            st.error("❌ السهم غير موجود، تأكد من الرمز وإضافة (.SR) للأسهم السعودية.")
         else:
             close, high, low = df['Close'], df['High'], df['Low']
 

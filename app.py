@@ -7,10 +7,8 @@ from plotly.subplots import make_subplots
 import warnings
 
 warnings.filterwarnings('ignore')
-
-st.set_page_config(page_title="الرادار الخوارزمي | الشامل", layout="wide")
-st.title("🚀 نظام التداول الخوارزمي (V5: الشامل + زيرو انعكاس + الزخم)")
-st.markdown("---")
+st.set_page_config(page_title="منصة ماسة 💎 | للتحليل الكمي", layout="wide", page_icon="💎")
+st.title("💎 منصة ماسة (Masa) للتحليل الكمي واصطياد الفرص")
 
 col1, col2 = st.columns([1, 3])
 with col1:

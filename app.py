@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import warnings
 import datetime
-import streamlit.components.v1 as components # 🌟 الإضافة الجديدة السحرية لدمج تريدينج فيو
+import streamlit.components.v1 as components
 
 warnings.filterwarnings('ignore')
 
@@ -35,17 +35,8 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .th-red { background-color: #c62828 !important; }
 .th-blue { background-color: #1565c0 !important; }
 .th-gray { background-color: #424242 !important; }
-
 [data-testid="collapsedControl"] { display: none; }
-
-.search-container {
-    background: linear-gradient(145deg, #1e2129, #15171e);
-    padding: 20px;
-    border-radius: 15px;
-    border: 1px solid #2d303e;
-    margin-bottom: 25px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-}
+.search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -55,7 +46,8 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # ==========================================
 @st.cache_data(ttl=900)
 def get_stock_data(ticker_symbol):
-    return yf.Ticker(ticker_symbol).history(period="2y")
+    # تمت زيادة الفترة إلى 3 سنوات لضمان حساب متوسط 200 يوم بدقة فائقة!
+    return yf.Ticker(ticker_symbol).history(period="3y") 
 
 WATCHLIST = ['1120.SR', '2222.SR', '2010.SR', '1180.SR', '7010.SR', '4165.SR', '4210.SR', '2360.SR', '1211.SR', '2020.SR', '4050.SR', '4190.SR', '2280.SR']
 
@@ -76,7 +68,6 @@ def scan_market():
                 last_l3, prev_l3 = l3.iloc[-1], l3.iloc[-2]
                 
                 sym = tk.replace('.SR', '')
-                
                 if last_c > last_h3 and prev_c <= prev_h3: breakouts.append({"السهم": sym, "التاريخ": today_str})
                 if last_c < last_l3 and prev_c >= prev_l3: breakdowns.append({"السهم": sym, "التاريخ": today_str})
                     
@@ -92,12 +83,11 @@ def scan_market():
                 elif counter <= -2: down_trends.append({"السهم": sym, "تاريخ البداية": df_s.index[max(0, len(df_s) - abs(counter))].strftime("%Y-%m-%d")})
         except:
             continue
-            
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(up_trends), pd.DataFrame(down_trends)
 
 # --- الواجهة الرئيسية ---
 st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>الرادار الخوارزمي لاصطياد الفرص وتتبع السيولة الذكية</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>الرادار الخوارزمي المدمج مع استراتيجية (V9)</p>", unsafe_allow_html=True)
 
 # ==========================================
 # 🔍 3. صندوق البحث المركزي
@@ -111,7 +101,7 @@ with col_search2:
 st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
-    with st.spinner(f"جاري جلب بيانات {ticker} ومسح السوق..."):
+    with st.spinner(f"جاري جلب بيانات {ticker} ودمج الخوارزمية..."):
         df = get_stock_data(ticker) 
         df_bup, df_bdn, df_tup, df_tdn = scan_market()
         
@@ -119,6 +109,11 @@ if analyze_btn or ticker:
             st.error("❌ السهم غير موجود، تأكد من الرمز وإضافة (.SR) للأسهم السعودية.")
         else:
             close, high, low = df['Close'], df['High'], df['Low']
+
+            # --- 🌟 السحر هنا: حسابات الاستراتيجية المترجمة من كودك (MA200 و MA50) ---
+            df['SMA_50'] = close.rolling(window=50).mean()
+            df['SMA_200'] = close.rolling(window=200).mean() # تمت إضافة MA200!
+            df['Vol_SMA_20'] = df['Volume'].rolling(window=20).mean()
 
             df['1d_%'] = close.pct_change(1) * 100
             df['3d_%'] = close.pct_change(3) * 100 
@@ -159,10 +154,6 @@ if analyze_btn or ticker:
             df['Low_10D'] = low.rolling(10).min().shift(1)
             df['High_15D'] = high.rolling(15).max().shift(1)
             df['Low_15D'] = low.rolling(15).min().shift(1)
-
-            df['SMA_20'] = close.rolling(window=20).mean()
-            df['SMA_50'] = close.rolling(window=50).mean()
-            df['Vol_SMA_20'] = df['Volume'].rolling(window=20).mean()
             
             delta_rsi = close.diff()
             up = delta_rsi.clip(lower=0)
@@ -177,13 +168,17 @@ if analyze_btn or ticker:
             last_close = close.iloc[-1]
             prev_close = close.iloc[-2]
             pct_change = ((last_close - prev_close) / prev_close) * 100
-            last_sma20, last_sma50 = df['SMA_20'].iloc[-1], df['SMA_50'].iloc[-1]
+            last_sma200, last_sma50 = df['SMA_200'].iloc[-1], df['SMA_50'].iloc[-1]
             last_vol, avg_vol = df['Volume'].iloc[-1], df['Vol_SMA_20'].iloc[-1]
             last_zr_high, last_zr_low = df['ZR_High'].iloc[-1], df['ZR_Low'].iloc[-1]
 
-            if last_close > last_sma20 and last_close > last_sma50: trend, trend_color = "صاعد (إيجابي)", "🟢"
-            elif last_close < last_sma20 and last_close < last_sma50: trend, trend_color = "هابط (سلبي)", "🔴"
-            else: trend, trend_color = "عرضي (مختلط)", "🟡"
+            # 🚀 تحديث الخلاصة الذكية لتقرأ استراتيجيتك أنت (فوق 200 وفوق 50)
+            if pd.notna(last_sma200) and pd.notna(last_sma50):
+                if last_close > last_sma200 and last_close > last_sma50: trend, trend_color = "مسار (V9) صاعد 🚀", "🟢"
+                elif last_close < last_sma200 and last_close < last_sma50: trend, trend_color = "مسار (V9) هابط 🔴", "🔴"
+                else: trend, trend_color = "تذبذب (حيرة) ⚖️", "🟡"
+            else:
+                trend, trend_color = "جاري الحساب...", "⚪"
 
             if last_vol > (avg_vol * 1.5): vol_status, vol_color = "سيولة عالية", "🔥"
             elif last_vol > avg_vol: vol_status, vol_color = "سيولة جيدة", "📈"
@@ -193,47 +188,38 @@ if analyze_btn or ticker:
             elif last_close <= last_zr_low * 1.05: zr_status, zr_color = "يختبر قاع زيرو", "💎"
             else: zr_status, zr_color = "في منتصف القناة", "⚖️"
 
-            st.markdown(f"### 🤖 القراءة الآلية لسهم ({ticker}):")
+            st.markdown(f"### 🤖 قراءة استراتيجية ماسة لسهم ({ticker}):")
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("الإغلاق الأخير", f"{last_close:.2f}", f"{pct_change:.2f}%")
-            m2.metric(f"الترند العام {trend_color}", trend)
+            m2.metric(f"الترند الاستراتيجي {trend_color}", trend)
             m3.metric(f"تدفق السيولة {vol_color}", vol_status)
             m4.metric(f"قراءة زيرو {zr_color}", zr_status)
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # ==========================================
-            # 🗂️ 4. نوافذ التبويب (أصبحت 4 نوافذ الآن)
-            # ==========================================
             tab1, tab2, tab3, tab4 = st.tabs([
                 "🎯 مخطط الاختراقات والتقارير", 
-                "🌐 شارت TradingView التفاعلي 🆕", 
-                "📊 الشارت الخوارزمي (ماسة)", 
+                "🌐 TradingView (مؤشرات محقونة) 🆕", 
+                "📊 شارت الخوارزمية (الاستراتيجية المدمجة)", 
                 "📋 جدول البيانات والتحميل"
             ])
 
             with tab1:
                 col_chart, col_reports = st.columns([3, 1.2])
-                
                 with col_chart:
-                    st.markdown("##### 🎛️ مخطط الاختراقات (اختر الفترات للعرض):")
                     c1, c2, c3, c4 = st.columns(4)
                     show_3d = c1.checkbox("عرض 3 أيام 🟠", value=True)
                     show_4d = c2.checkbox("عرض 4 أيام 🟢", value=False)
                     show_10d = c3.checkbox("عرض 10 أيام 🟣", value=True)
                     show_15d = c4.checkbox("عرض 15 يوم 🔴", value=False)
-                    
                     df_plot2 = df.tail(150)
                     fig2 = go.Figure()
-                    
                     fig2.add_trace(go.Scatter(x=df_plot2.index, y=df_plot2['Close'], mode='lines+markers', name='السعر', line=dict(color='dodgerblue', width=2), marker=dict(size=5)))
                     
                     def add_channel(fig, h_col, l_col, color, dash, name, marker_color, marker_size, symbol_up, symbol_dn):
                         fig.add_trace(go.Scatter(x=df_plot2.index, y=df_plot2[h_col], line=dict(color=color, width=1.5, dash=dash, shape='hv'), name=f'مقاومة {name}'))
                         fig.add_trace(go.Scatter(x=df_plot2.index, y=df_plot2[l_col], line=dict(color=color, width=1.5, dash=dash, shape='hv'), name=f'دعم {name}'))
-                        
                         bo_up = df_plot2[(df_plot2['Close'] > df_plot2[h_col]) & (df_plot2['Close'].shift(1) <= df_plot2[h_col].shift(1))]
                         bo_dn = df_plot2[(df_plot2['Close'] < df_plot2[l_col]) & (df_plot2['Close'].shift(1) >= df_plot2[l_col].shift(1))]
-                        
                         fig.add_trace(go.Scatter(x=bo_up.index, y=bo_up['Close'], mode='markers', marker=dict(symbol=symbol_up, size=marker_size, color=marker_color, line=dict(width=1, color='black')), name=f'اختراق {name}'))
                         fig.add_trace(go.Scatter(x=bo_dn.index, y=bo_dn['Close'], mode='markers', marker=dict(symbol=symbol_dn, size=marker_size, color='red', line=dict(width=1, color='black')), name=f'كسر {name}'))
 
@@ -241,13 +227,11 @@ if analyze_btn or ticker:
                     if show_4d: add_channel(fig2, 'High_4D', 'Low_4D', '#4caf50', 'dash', '4 أيام', '#4caf50', 12, 'triangle-up', 'triangle-down')
                     if show_10d: add_channel(fig2, 'High_10D', 'Low_10D', '#9c27b0', 'solid', '10 أيام', '#9c27b0', 14, 'diamond', 'diamond-tall')
                     if show_15d: add_channel(fig2, 'High_15D', 'Low_15D', '#f44336', 'dashdot', '15 يوم', '#f44336', 16, 'star', 'star-triangle-down')
-
                     fig2.update_layout(height=650, hovermode='x unified', template='plotly_dark', margin=dict(l=10, r=10, t=10, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                     st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
                 with col_reports:
                     st.markdown("<h4 style='text-align: right; color: #fff;'>التقارير الحية</h4>", unsafe_allow_html=True)
-                    
                     st.markdown("<div class='scanner-header'>الاختراق (اليوم)</div>", unsafe_allow_html=True)
                     if not df_bup.empty:
                         html_bup = "<table class='qafah-table'><tr><th>السهم</th><th>التاريخ</th></tr>"
@@ -273,17 +257,13 @@ if analyze_btn or ticker:
                     else:
                         st.markdown("<table class='qafah-table'><tr><th class='th-gray'>لا توجد مسارات صاعدة</th></tr></table>", unsafe_allow_html=True)
 
-            # ==========================================
-            # 📈 التبويب 2 الجديد (TradingView المدمج)
-            # ==========================================
             with tab2:
-                # تحويل رمز السهم للغة التي يفهمها تريدنق فيو (مثال: 4165.SR تصبح TADAWUL:4165)
                 if ticker.upper().endswith('.SR'):
                     tv_symbol = f"TADAWUL:{ticker.upper().replace('.SR', '')}"
                 else:
                     tv_symbol = ticker.upper()
                 
-                # كود تضمين مكتبة TradingView المتقدمة
+                # 🌟 السحر التقني: إضافة مصفوفة "studies" لفتح مؤشرات قياسية تلقائياً
                 tradingview_html = f"""
                 <div class="tradingview-widget-container" style="height:700px;width:100%">
                   <div id="tradingview_masa" style="height:100%;width:100%"></div>
@@ -305,37 +285,58 @@ if analyze_btn or ticker:
                   "hide_legend": false,
                   "save_image": false,
                   "container_id": "tradingview_masa",
-                  "toolbar_bg": "#1e2129"
+                  "toolbar_bg": "#1e2129",
+                  "studies": [
+                    "Volume@tv-basicstudies",
+                    "RSI@tv-basicstudies",
+                    "MASimple@tv-basicstudies",
+                    "MASimple@tv-basicstudies"
+                  ]
                 }}
                   );
                   </script>
                 </div>
                 """
-                # دمج الكود داخل الموقع
                 components.html(tradingview_html, height=700)
 
+            # ==========================================
+            # 📊 التبويب 3: ترجمة الاستراتيجية لـ Python (إضافة MA200 و MA50)
+            # ==========================================
             with tab3:
-                df_plot = df.tail(180) 
+                df_plot = df.tail(300) 
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
+                
+                # الشموع
                 fig.add_trace(go.Candlestick(x=df_plot.index, open=df_plot['Open'], high=df_plot['High'], low=df_plot['Low'], close=df_plot['Close'], name='السعر'), row=1, col=1)
+                
+                # 🚀 رسم المتوسطات المتحركة الخاصة بك (نفس ألوان كود Pine Script)
+                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_200'], line=dict(color='orange', width=2.5), name='MA 200 (V9)'), row=1, col=1)
+                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='cyan', width=2), name='MA 50 (V9)'), row=1, col=1)
+
+                # زيرو انعكاس
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_High'], line=dict(color='white', width=2, dash='dot'), name='سقف زيرو'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_Low'], line=dict(color='orange', width=2, dash='dot'), name='قاع زيرو'), row=1, col=1)
+                
                 colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]
                 fig.add_trace(go.Bar(x=df_plot.index, y=df_plot['Volume'], marker_color=colors, name='السيولة'), row=2, col=1)
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['RSI'], line=dict(color='purple', width=2), name='RSI'), row=3, col=1)
+                
+                # RSI 14
+                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['RSI'], line=dict(color='purple', width=2), name='RSI 14'), row=3, col=1)
                 fig.add_hline(y=70, line_dash="dot", row=3, col=1, line_color="red")
+                fig.add_hline(y=50, line_dash="solid", row=3, col=1, line_color="gray", opacity=0.5) # خط 50 الداعم كما في استراتيجيتك
                 fig.add_hline(y=30, line_dash="dot", row=3, col=1, line_color="green")
-                fig.update_layout(height=800, template='plotly_dark', showlegend=False, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
+                
+                fig.update_layout(height=800, template='plotly_dark', showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             with tab4:
                 table = pd.DataFrame({
                     'التاريخ': df.index.strftime('%Y-%m-%d'),
                     'الإغلاق': df['Close'].round(2),
-                    'عداد الاتجاه': df['Counter'].astype(int),
+                    'MA 50': df['SMA_50'].round(2),
+                    'MA 200': df['SMA_200'].round(2),
                     'تغير 1 يوم': df['Load_Diff_1D'],
                     'تراكمي 3 أيام': df['Load_Diff_3D'], 
-                    'تراكمي 5 أيام': df['Load_Diff_5D'],
                     'تراكمي 10 أيام': df['Load_Diff_10D'],
                     'حجم السيولة': df['Volume']
                 })

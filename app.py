@@ -62,7 +62,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
     score = 50
     reasons = []
     
-    # 1. تحليل الاتجاه العام (MA200)
     if last_close > ma200:
         score += 15
         reasons.append("✅ <b>الاتجاه العام (MA 200):</b> السهم يتداول فوق بوصلة الهامور في مسار صاعد آمن استثمارياً.")
@@ -70,7 +69,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
         score -= 20
         reasons.append("❌ <b>الاتجاه العام (MA 200):</b> السهم كسر متوسط 200 ودخل في مسار هابط (سلبي وخطير).")
         
-    # 2. تحليل زخم المضاربة (MA50)
     if last_close > ma50:
         dist = ((last_close - ma50) / ma50) * 100
         if dist < 3:
@@ -86,7 +84,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
         score -= 15
         reasons.append("🔴 <b>زخم المضاربة (MA 50):</b> السهم كسر متوسط 50 ويمر بمرحلة ضعف أو تصحيح.")
 
-    # 3. تحليل العداد
     if counter > 0:
         if counter <= 3:
             score += 15
@@ -105,7 +102,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
             score -= 15
             reasons.append(f"🩸 <b>عداد الاتجاه ({counter}):</b> نزيف مستمر وتصريف. لا تلتقط السكين الساقطة حتى يظهر ارتداد صريح ويصبح العداد أخضر.")
 
-    # 4. تحليل القوة النسبية RSI
     if 40 <= rsi <= 65:
         score += 10
         reasons.append(f"✅ <b>مؤشر الزخم (RSI {rsi:.1f}):</b> المؤشر صحي ولديه مساحة واسعة لمواصلة الصعود دون تشبع.")
@@ -116,7 +112,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
         score += 15
         reasons.append(f"🛒 <b>مؤشر الزخم (RSI {rsi:.1f}):</b> تشبع بيعي عميق. السهم انضغط بقوة ومناطق الارتداد قريبة جداً.")
 
-    # 5. تحليل زيرو انعكاس
     if pd.notna(zr_low) and last_close <= zr_low * 1.05:
         score += 15
         reasons.append("🎯 <b>زيرو انعكاس:</b> السعر يختبر قاع القناة (منطقة ارتداد مؤسساتية عالية الدقة).")
@@ -124,18 +119,13 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
         score -= 15
         reasons.append("🧱 <b>زيرو انعكاس:</b> السعر يصطدم بسقف القناة (مقاومة تاريخية شرسة، يفضل جني أرباح أو الحذر).")
 
-    # تحديد القرار النهائي (تأكد أن السكور بين 0 و 100)
     score = int(max(0, min(100, score)))
     
-    if score >= 80:
-        return score, "شراء قوي 🟢🚀", "#00E676", reasons
-    elif 60 <= score < 80:
-        if counter > 5 or rsi > 65:
-            return score, "احتفاظ / جني أرباح تدريجي 🟡⚠️", "#FFD700", reasons
-        return score, "شراء / تجميع 🟢📈", "#4CAF50", reasons
-    elif 40 <= score < 60:
-        return score, "مراقبة / حيرة فنية ⚪⏳", "#9E9E9E", reasons
-    elif 20 <= score < 40:
+    if score >= 75:
+        return score, "شراء / تجميع 🟢🚀", "#00E676", reasons
+    elif 50 <= score < 75:
+        return score, "احتفاظ / مراقبة 🟡⚠️", "#FFD700", reasons
+    elif 30 <= score < 50:
         return score, "سلبية / لا تشتري 🔴🔻", "#FF5252", reasons
     else:
         return score, "خروج / انهيار ⛔🩸", "#D32F2F", reasons
@@ -214,10 +204,9 @@ def scan_market(watchlist_list):
                     breakdowns.append({"السهم": sym, "التاريخ": today_str})
                     alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر 3 أيام هابط 🔴"})
 
-                # 🧠 تغذية محرك ذكاء ماسة لاصطياد الفرص آلياً
                 ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1])
-                # نرشح فقط الأسهم التي تعطي إشارات واضحة (شراء قوي أو خروج)
-                if ai_score >= 70 or ai_score <= 30:
+                # نرشح جميع الأسهم في الجدول ليعطيك رؤية شاملة
+                if ai_score >= 60 or ai_score <= 40:
                     ai_picks.append({"السهم": sym, "السعر": round(last_c, 2), "التقييم": ai_score, "القرار": ai_dec, "اللون": ai_col})
 
         except: continue
@@ -256,6 +245,16 @@ if analyze_btn or ticker:
             df['SMA_50'] = close.rolling(window=50).mean()
             df['SMA_200'] = close.rolling(window=200).mean() 
             df['Vol_SMA_20'] = df['Volume'].rolling(window=20).mean()
+
+            # 🚀 الإصلاح الجذري للخطأ (إضافة قنوات الاختراق للسهم الرئيسي)
+            df['High_3D'] = high.rolling(3).max().shift(1)
+            df['Low_3D'] = low.rolling(3).min().shift(1)
+            df['High_4D'] = high.rolling(4).max().shift(1)
+            df['Low_4D'] = low.rolling(4).min().shift(1)
+            df['High_10D'] = high.rolling(10).max().shift(1)
+            df['Low_10D'] = low.rolling(10).min().shift(1)
+            df['High_15D'] = high.rolling(15).max().shift(1)
+            df['Low_15D'] = low.rolling(15).min().shift(1)
 
             df['1d_%'] = close.pct_change(1) * 100
             df['3d_%'] = close.pct_change(3) * 100 
@@ -305,6 +304,21 @@ if analyze_btn or ticker:
             zr_status, zr_color = ("يختبر سقف زيرو", "⚠️") if last_close >= last_zr_high * 0.98 else ("يختبر قاع زيرو", "💎") if last_close <= last_zr_low * 1.05 else ("في منتصف القناة", "⚖️")
             currency = "$" if "الأمريكي" in market_choice or not ticker.endswith('.SR') else "ريال"
 
+            def categorize(val):
+                if pd.isna(val): return ""
+                abs_val = abs(val)
+                if abs_val >= 1.0: cat = "MAJOR"
+                elif abs_val >= 0.1: cat = "HIGH"
+                else: cat = "MEDIUM"
+                if val > 0: return f"🟢 {val:.2f}% ({cat})"
+                elif val < 0: return f"🔴 {val:.2f}% ({cat})"
+                else: return f"⚪ {val:.2f}% ({cat})"
+                
+            df['Load_Diff_1D'] = df['1d_%'].apply(categorize)
+            df['Load_Diff_3D'] = df['3d_%'].apply(categorize) 
+            df['Load_Diff_5D'] = df['5d_%'].apply(categorize)
+            df['Load_Diff_10D'] = df['10d_%'].apply(categorize)
+
             st.markdown(f"### 🤖 قراءة استراتيجية ماسة لسهم ({ticker}):")
             m1, m2, m3, m4 = st.columns(4)
             m1.metric(f"الإغلاق الأخير ({currency})", f"{last_close:.2f}", f"{pct_change:.2f}%")
@@ -317,7 +331,7 @@ if analyze_btn or ticker:
             # 🧠 التبويب الأول والأهم: ذكاء ماسة (AI)
             # ==========================================
             tab_ai, tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
-                "🧠 ذكاء ماسة (AI) 🆕",
+                "🧠 ذكاء ماسة (AI)",
                 "🎯 مخطط الاختراقات", 
                 "🗂️ ماسح السوق (Loads)",
                 "🚨 رادار التنبيهات",
@@ -327,7 +341,6 @@ if analyze_btn or ticker:
             ])
 
             with tab_ai:
-                # 1. التقرير الآلي للسهم المبحوث عنه
                 ai_score, ai_decision, ai_color, ai_reasons = get_ai_analysis(last_close, last_sma50, last_sma200, last_rsi, last_counter, last_zr_low, last_zr_high)
                 
                 st.markdown(f"""
@@ -347,7 +360,6 @@ if analyze_btn or ticker:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # 2. اصطيادات الذكاء الاصطناعي من السوق العام
                 st.markdown("#### 🎯 ترشيحات الذكاء الاصطناعي للسوق (من القائمة الحالية):")
                 if not df_ai_picks.empty:
                     df_ai_disp = df_ai_picks.sort_values(by="التقييم", ascending=False)
@@ -359,7 +371,6 @@ if analyze_btn or ticker:
                 else:
                     st.info("🤖 الخوارزمية لم تجد أسهم حالياً حققت شروط (الشراء القوي) أو (الهروب المباشر) في قائمة المسح. السوق قد يكون في مناطق حيرة وتذبذب.")
 
-            # (باقي التبويبات بدون تغيير كما هي تعمل بامتياز)
             with tab1:
                 col_chart, col_reports = st.columns([2.9, 1.4])
                 with col_chart:
@@ -420,11 +431,7 @@ if analyze_btn or ticker:
                     worst_10d = len(df_loads[df_loads['load diff 10d %'] < 0])
                     st.markdown(f"""<div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom: 20px;"><span class="filter-btn-active">All ({len(df_loads)})</span><span class="filter-btn">Top 3d Gainers ({top_3d})</span><span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 3d Losers ({worst_3d})</span><span class="filter-btn">Top 5d Gainers ({top_5d})</span><span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 5d Losers ({worst_5d})</span><span class="filter-btn">Top 10d Gainers ({top_10d})</span><span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 10d Losers ({worst_10d})</span></div>""", unsafe_allow_html=True)
                     df_loads_styled = df_loads.copy()
-                    df_loads_styled['load diff 1d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 1d %']:.4f}% {x['1d_cat']}", axis=1)
-                    df_loads_styled['load diff 3d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 3d %']:.4f}% {x['3d_cat']}", axis=1)
-                    df_loads_styled['load diff 5d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 5d %']:.4f}% {x['5d_cat']}", axis=1)
-                    df_loads_styled['load diff 10d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 10d %']:.4f}% {x['10d_cat']}", axis=1)
-                    df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'])
+                    
                     def color_loads_values(val):
                         if isinstance(val, str) and "%" in val:
                             if "-" in val: return 'color: #f44336; font-weight: bold;'
@@ -433,6 +440,12 @@ if analyze_btn or ticker:
                         elif isinstance(val, int) and (val > 0): return 'color: #4caf50; font-weight: bold;'
                         elif isinstance(val, int) and (val < 0): return 'color: #f44336; font-weight: bold;'
                         return ''
+                    
+                    df_loads_styled['load diff 1d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 1d %']:.4f}% {x['1d_cat']}", axis=1)
+                    df_loads_styled['load diff 3d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 3d %']:.4f}% {x['3d_cat']}", axis=1)
+                    df_loads_styled['load diff 5d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 5d %']:.4f}% {x['5d_cat']}", axis=1)
+                    df_loads_styled['load diff 10d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 10d %']:.4f}% {x['10d_cat']}", axis=1)
+                    df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'])
                     st.dataframe(df_loads_styled.style.applymap(color_loads_values), use_container_width=True, height=550, hide_index=True)
 
             with tab6:

@@ -33,23 +33,26 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .qafah-table th { color: white; padding: 10px; font-weight: bold; }
 .qafah-table td { color: #e0e0e0; padding: 10px; border-bottom: 1px solid #2d303e; }
 [data-testid="collapsedControl"] { display: none; }
-.search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
-
-/* أزرار الفلاتر العلوية */
+.search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); text-align: center;}
 .filter-btn { border: 1px solid #4caf50; color: #4caf50; background-color: transparent; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
 .filter-btn-active { background-color: #4caf50; color: white; border: 1px solid #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
+/* تصميم أزرار اختيار السوق */
+div.stRadio > div[role="radiogroup"] { justify-content: center; margin-bottom: 15px; }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # ==========================================
-# ⚡ 2. محركات السرعة والمسح الآلي الشامل
+# ⚡ 2. قوائم الأسواق ومحركات المسح
 # ==========================================
 @st.cache_data(ttl=900)
 def get_stock_data(ticker_symbol):
     return yf.Ticker(ticker_symbol).history(period="3y") 
 
-WATCHLIST = ['1120.SR', '2222.SR', '2010.SR', '1180.SR', '7010.SR', '4165.SR', '4210.SR', '2360.SR', '1211.SR', '2020.SR', '4050.SR', '4190.SR', '2280.SR']
+# 🇸🇦 قائمة السوق السعودي
+SAUDI_WATCHLIST = ['1120.SR', '2222.SR', '2010.SR', '1180.SR', '7010.SR', '4165.SR', '4210.SR', '2360.SR', '1211.SR', '2020.SR', '4050.SR', '4190.SR', '2280.SR']
+# 🇺🇸 قائمة السوق الأمريكي (عمالقة التكنولوجيا والمؤشرات)
+US_WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'META', 'GOOGL', 'AMD', 'NFLX', 'PLTR', 'COIN', 'SPY', 'QQQ']
 
 def get_cat(val):
     if pd.isna(val): return ""
@@ -60,14 +63,14 @@ def get_cat(val):
     else: return "(LOW)"
 
 @st.cache_data(ttl=1800)
-def scan_market():
+def scan_market(watchlist_list):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list = [], []
     
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
     now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    for tk in WATCHLIST:
+    for tk in watchlist_list:
         try:
             df_s = yf.Ticker(tk).history(period="1y")
             if len(df_s) > 20:
@@ -82,7 +85,7 @@ def scan_market():
                 last_h3, prev_h3 = h3.iloc[-1], h3.iloc[-2]
                 last_l3, prev_l3 = l3.iloc[-1], l3.iloc[-2]
 
-                # --- 1. عداد الاتجاه ---
+                # --- عداد الاتجاه ---
                 diff = c.diff()
                 direction = np.where(diff > 0, 1, np.where(diff < 0, -1, 0))
                 counter = 0
@@ -97,7 +100,7 @@ def scan_market():
                 if cur_count > 0: recent_up.append({"السهم": sym, "تاريخ": df_s.index[-cur_count].strftime("%Y-%m-%d"), "منذ كم صف": cur_count})
                 elif cur_count < 0: recent_down.append({"السهم": sym, "تاريخ": df_s.index[-abs(cur_count)].strftime("%Y-%m-%d"), "منذ كم صف": abs(cur_count)})
 
-                # 🚀 حسابات التراكمي الشاملة (1, 3, 5, 10 أيام)
+                # --- حسابات التراكمي الشاملة ---
                 pct_1d = (c.iloc[-1] / c.iloc[-2] - 1) * 100 if len(c)>1 else 0
                 pct_3d = (c.iloc[-1] / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
                 pct_5d = (c.iloc[-1] / c.iloc[-6] - 1) * 100 if len(c)>5 else 0
@@ -123,41 +126,47 @@ def scan_market():
 
                 if last_c > last_h3 and prev_c <= prev_h3: 
                     breakouts.append({"السهم": sym, "التاريخ": today_str})
-                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "إنشاء قناة سعرية صاعدة 🟢"})
+                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "اختراق 3 أيام صاعد 🟢"})
                 if last_c < last_l3 and prev_c >= prev_l3: 
                     breakdowns.append({"السهم": sym, "التاريخ": today_str})
-                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر القناة السعرية 🔴"})
-                if pd.notna(zr_h.iloc[-1]) and last_c > zr_h.iloc[-1] and prev_c <= zr_h.iloc[-2]:
-                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "اختراق زيرو انعكاس (فرصة شراء) 🚀"})
-                if pd.notna(zr_l.iloc[-1]) and last_c < zr_l.iloc[-1] and prev_c >= zr_l.iloc[-2]:
-                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر زيرو انعكاس ⚠️"})
+                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر 3 أيام هابط 🔴"})
         except:
             continue
             
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list)
 
 # --- الواجهة الرئيسية ---
-st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>الرادار الخوارزمي المدمج مع استراتيجية (V9)</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة العالمية (Global Quant)</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>منصة تحليل السيولة الذكية للسوقين السعودي والأمريكي 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
 
 # ==========================================
-# 🔍 3. صندوق البحث المركزي
+# 🔍 3. صندوق البحث المركزي (محدث ليدعم السوقين)
 # ==========================================
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
+
+# 🌐 إضافة قائمة اختيار السوق
+market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
+default_ticker = "NVDA" if "الأمريكي" in market_choice else "4165.SR"
+placeholder_text = "مثال: NVDA, TSLA, AAPL" if "الأمريكي" in market_choice else "مثال: 4165.SR, 2222.SR"
+
 col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
 with col_search1:
-    ticker = st.text_input("🎯 رمز السهم:", value="4165.SR", label_visibility="collapsed")
+    ticker = st.text_input(f"🎯 رمز السهم ({placeholder_text}):", value=default_ticker, label_visibility="collapsed")
 with col_search2:
     analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
 st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
-    with st.spinner(f"جاري مسح السوق وبناء الجداول..."):
+    ticker = ticker.upper() # تحويل الحروف إلى كبيرة تلقائياً لتفادي الأخطاء
+    # تحديد القائمة المطلوبة للمسح بناءً على اختيار المستخدم
+    selected_watchlist = US_WATCHLIST if "الأمريكي" in market_choice else SAUDI_WATCHLIST
+    
+    with st.spinner(f"جاري مسح {market_choice} وبناء جداول الرادار..."):
         df = get_stock_data(ticker) 
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts = scan_market()
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts = scan_market(selected_watchlist)
         
         if df.empty:
-            st.error("❌ السهم غير موجود، تأكد من الرمز وإضافة (.SR) للأسهم السعودية.")
+            st.error("❌ السهم غير موجود! تذكر: أضف (.SR) للأسهم السعودية (مثال: 2222.SR)، والأسهم الأمريكية بدون إضافات (مثال: AAPL).")
         else:
             close, high, low = df['Close'], df['High'], df['Low']
 
@@ -237,9 +246,12 @@ if analyze_btn or ticker:
             elif last_close <= last_zr_low * 1.05: zr_status, zr_color = "يختبر قاع زيرو", "💎"
             else: zr_status, zr_color = "في منتصف القناة", "⚖️"
 
+            # 🌍 إظهار العملة المناسبة بناءً على السوق
+            currency = "$" if "الأمريكي" in market_choice or not ticker.endswith('.SR') else "ريال"
+
             st.markdown(f"### 🤖 قراءة استراتيجية ماسة لسهم ({ticker}):")
             m1, m2, m3, m4 = st.columns(4)
-            m1.metric("الإغلاق الأخير", f"{last_close:.2f}", f"{pct_change:.2f}%")
+            m1.metric(f"الإغلاق الأخير ({currency})", f"{last_close:.2f}", f"{pct_change:.2f}%")
             m2.metric(f"الترند الاستراتيجي {trend_color}", trend)
             m3.metric(f"تدفق السيولة {vol_color}", vol_status)
             m4.metric(f"قراءة زيرو {zr_color}", zr_status)
@@ -283,7 +295,7 @@ if analyze_btn or ticker:
 
                 with col_reports:
                     st.markdown("<h4 style='text-align: right; color: #fff;'>التقارير الحية</h4>", unsafe_allow_html=True)
-                    st.markdown("<div class='scanner-header-gray'>التغييرات الأخيرة في الاتجاه</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='scanner-header-gray'>التغييرات الأخيرة في الاتجاه</div>", unsafe_allow_html=True)
                     
                     c_txt1, c_inp, c_txt2 = st.columns([2.5, 1, 0.5])
                     with c_txt1: st.markdown("<p style='font-size:13px; margin-top:8px; text-align:right; color:#ccc;'>عرض التغييرات خلال آخر:</p>", unsafe_allow_html=True)
@@ -314,12 +326,8 @@ if analyze_btn or ticker:
                     else:
                         st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th></tr><tr><td style='color:gray;'>لا توجد تغيرات هابطة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
 
-            # ==========================================
-            # 🗂️ التبويب 5: ماسح السوق الشامل (Loads) 
-            # ==========================================
             with tab5:
                 if not df_loads.empty:
-                    # إضافة إحصائيات 3 أيام للأزرار العلوية
                     top_3d = len(df_loads[df_loads['load diff 3d %'] > 0])
                     worst_3d = len(df_loads[df_loads['load diff 3d %'] < 0])
                     top_5d = len(df_loads[df_loads['load diff 5d %'] > 0])
@@ -366,9 +374,6 @@ if analyze_btn or ticker:
                 else:
                     st.info("جاري تحميل بيانات السوق...")
 
-            # ==========================================
-            # 🚨 التبويب 6: سجل التنبيهات (Alerts)
-            # ==========================================
             with tab6:
                 if not df_alerts.empty:
                     def color_alerts(val):
@@ -387,8 +392,8 @@ if analyze_btn or ticker:
                     st.success("السوق هادئ حالياً.. لا توجد تنبيهات قوية على القائمة المراقبة.")
 
             with tab2:
-                if ticker.upper().endswith('.SR'): tv_symbol = f"TADAWUL:{ticker.upper().replace('.SR', '')}"
-                else: tv_symbol = ticker.upper()
+                if ticker.endswith('.SR'): tv_symbol = f"TADAWUL:{ticker.replace('.SR', '')}"
+                else: tv_symbol = ticker
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "D","timezone": "Asia/Riyadh","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 

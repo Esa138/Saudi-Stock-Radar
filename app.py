@@ -28,21 +28,22 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .scanner-header { background-color: rgba(46, 125, 50, 0.2); color: #4caf50; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; margin-bottom: 10px; border: 1px solid #4caf50; }
 .scanner-header-blue { background-color: rgba(33, 150, 243, 0.2); color: #2196f3; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; margin-bottom: 10px; border: 1px solid #2196f3; }
 .scanner-header-red { background-color: rgba(211, 47, 47, 0.2); color: #f44336; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; margin-bottom: 10px; border: 1px solid #f44336; }
-.stCheckbox > label { font-weight: bold; color: #e0e0e0; }
+.scanner-header-gray { background-color: #e0e0e0; color: #333; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; margin-bottom: 10px; }
 .qafah-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; text-align: center; background-color: #1e2129; border-radius: 5px; overflow: hidden;}
-.qafah-table th { background-color: #2e7d32; color: white; padding: 10px; font-weight: bold; }
+.qafah-table th { color: white; padding: 10px; font-weight: bold; }
 .qafah-table td { color: #e0e0e0; padding: 10px; border-bottom: 1px solid #2d303e; }
-.th-red { background-color: #c62828 !important; }
-.th-blue { background-color: #1565c0 !important; }
-.th-gray { background-color: #424242 !important; }
 [data-testid="collapsedControl"] { display: none; }
 .search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+
+/* أزرار الفلاتر العلوية */
+.filter-btn { border: 1px solid #4caf50; color: #4caf50; background-color: transparent; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
+.filter-btn-active { background-color: #4caf50; color: white; border: 1px solid #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # ==========================================
-# ⚡ 2. محركات السرعة والمسح الآلي
+# ⚡ 2. محركات السرعة والمسح الآلي الشامل
 # ==========================================
 @st.cache_data(ttl=900)
 def get_stock_data(ticker_symbol):
@@ -50,39 +51,90 @@ def get_stock_data(ticker_symbol):
 
 WATCHLIST = ['1120.SR', '2222.SR', '2010.SR', '1180.SR', '7010.SR', '4165.SR', '4210.SR', '2360.SR', '1211.SR', '2020.SR', '4050.SR', '4190.SR', '2280.SR']
 
+def get_cat(val):
+    if pd.isna(val): return ""
+    v = abs(val)
+    if v >= 2.0: return "(MAJOR)"
+    elif v >= 0.5: return "(HIGH)"
+    elif v >= 0.1: return "(MEDIUM)"
+    else: return "(LOW)"
+
 @st.cache_data(ttl=1800)
 def scan_market():
-    breakouts, breakdowns, up_trends, down_trends = [], [], [], []
+    breakouts, breakdowns, recent_up, recent_down = [], [], [], []
+    loads_list, alerts_list = [], []
+    
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
     for tk in WATCHLIST:
         try:
-            df_s = yf.Ticker(tk).history(period="1mo")
-            if len(df_s) > 10:
+            df_s = yf.Ticker(tk).history(period="1y")
+            if len(df_s) > 20:
                 c, h, l = df_s['Close'], df_s['High'], df_s['Low']
+                sym = tk.replace('.SR', '')
+                
                 h3, l3 = h.rolling(3).max().shift(1), l.rolling(3).min().shift(1)
+                zr_h = h.rolling(300, min_periods=10).max().shift(1)
+                zr_l = l.rolling(300, min_periods=10).min().shift(1)
                 
                 last_c, prev_c = c.iloc[-1], c.iloc[-2]
                 last_h3, prev_h3 = h3.iloc[-1], h3.iloc[-2]
                 last_l3, prev_l3 = l3.iloc[-1], l3.iloc[-2]
-                
-                sym = tk.replace('.SR', '')
-                if last_c > last_h3 and prev_c <= prev_h3: breakouts.append({"السهم": sym, "التاريخ": today_str})
-                if last_c < last_l3 and prev_c >= prev_l3: breakdowns.append({"السهم": sym, "التاريخ": today_str})
-                    
+
+                # --- 1. عداد الاتجاه ---
                 diff = c.diff()
                 direction = np.where(diff > 0, 1, np.where(diff < 0, -1, 0))
                 counter = 0
+                counters = []
                 for d in direction:
                     if d == 1: counter = counter + 1 if counter > 0 else 1
                     elif d == -1: counter = counter - 1 if counter < 0 else -1
                     else: counter = 0
-                    
-                if counter >= 2: up_trends.append({"السهم": sym, "تاريخ البداية": df_s.index[max(0, len(df_s) - counter)].strftime("%Y-%m-%d")})
-                elif counter <= -2: down_trends.append({"السهم": sym, "تاريخ البداية": df_s.index[max(0, len(df_s) - abs(counter))].strftime("%Y-%m-%d")})
+                    counters.append(counter)
+                cur_count = counters[-1]
+                
+                if cur_count > 0: recent_up.append({"السهم": sym, "تاريخ": df_s.index[-cur_count].strftime("%Y-%m-%d"), "منذ كم صف": cur_count})
+                elif cur_count < 0: recent_down.append({"السهم": sym, "تاريخ": df_s.index[-abs(cur_count)].strftime("%Y-%m-%d"), "منذ كم صف": abs(cur_count)})
+
+                # 🚀 حسابات التراكمي الشاملة (1, 3, 5, 10 أيام)
+                pct_1d = (c.iloc[-1] / c.iloc[-2] - 1) * 100 if len(c)>1 else 0
+                pct_3d = (c.iloc[-1] / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
+                pct_5d = (c.iloc[-1] / c.iloc[-6] - 1) * 100 if len(c)>5 else 0
+                pct_10d = (c.iloc[-1] / c.iloc[-11] - 1) * 100 if len(c)>10 else 0
+
+                loads_list.append({
+                    "holding ticker": sym,
+                    "date Latest Date": df_s.index[-1].strftime("%Y-%m-%d"),
+                    "daily direction counter": int(cur_count),
+                    "hitting_days": abs(cur_count),
+                    "load diff 1d %": pct_1d,
+                    "1d_cat": get_cat(pct_1d),
+                    "Top G/L 3Days": "✅" if pct_3d > 0 else "❌",
+                    "load diff 3d %": pct_3d,
+                    "3d_cat": get_cat(pct_3d),
+                    "Top G/L 5Days": "✅" if pct_5d > 0 else "❌",
+                    "load diff 5d %": pct_5d,
+                    "5d_cat": get_cat(pct_5d),
+                    "Top G/L 10days": "✅" if pct_10d > 0 else "❌",
+                    "load diff 10d %": pct_10d,
+                    "10d_cat": get_cat(pct_10d),
+                })
+
+                if last_c > last_h3 and prev_c <= prev_h3: 
+                    breakouts.append({"السهم": sym, "التاريخ": today_str})
+                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "إنشاء قناة سعرية صاعدة 🟢"})
+                if last_c < last_l3 and prev_c >= prev_l3: 
+                    breakdowns.append({"السهم": sym, "التاريخ": today_str})
+                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر القناة السعرية 🔴"})
+                if pd.notna(zr_h.iloc[-1]) and last_c > zr_h.iloc[-1] and prev_c <= zr_h.iloc[-2]:
+                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "اختراق زيرو انعكاس (فرصة شراء) 🚀"})
+                if pd.notna(zr_l.iloc[-1]) and last_c < zr_l.iloc[-1] and prev_c >= zr_l.iloc[-2]:
+                    alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر زيرو انعكاس ⚠️"})
         except:
             continue
-    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(up_trends), pd.DataFrame(down_trends)
+            
+    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list)
 
 # --- الواجهة الرئيسية ---
 st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
@@ -100,9 +152,9 @@ with col_search2:
 st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
-    with st.spinner(f"جاري جلب بيانات {ticker} ودمج الخوارزمية..."):
+    with st.spinner(f"جاري مسح السوق وبناء الجداول..."):
         df = get_stock_data(ticker) 
-        df_bup, df_bdn, df_tup, df_tdn = scan_market()
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts = scan_market()
         
         if df.empty:
             st.error("❌ السهم غير موجود، تأكد من الرمز وإضافة (.SR) للأسهم السعودية.")
@@ -193,15 +245,17 @@ if analyze_btn or ticker:
             m4.metric(f"قراءة زيرو {zr_color}", zr_status)
             st.markdown("<br>", unsafe_allow_html=True)
 
-            tab1, tab2, tab3, tab4 = st.tabs([
-                "🎯 مخطط الاختراقات والتقارير", 
-                "🌐 TradingView (مؤشرات محقونة)", 
-                "📊 شارت الخوارزمية (الاستراتيجية المدمجة)", 
-                "📋 جدول البيانات والتحميل"
+            tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
+                "🎯 مخطط الاختراقات", 
+                "🗂️ ماسح السوق (Loads)",
+                "🚨 رادار التنبيهات",
+                "🌐 TradingView", 
+                "📊 شارت الخوارزمية", 
+                "📋 بيانات السهم"
             ])
 
             with tab1:
-                col_chart, col_reports = st.columns([3, 1.2])
+                col_chart, col_reports = st.columns([2.9, 1.4])
                 with col_chart:
                     c1, c2, c3, c4 = st.columns(4)
                     show_3d = c1.checkbox("عرض 3 أيام 🟠", value=True)
@@ -229,111 +283,134 @@ if analyze_btn or ticker:
 
                 with col_reports:
                     st.markdown("<h4 style='text-align: right; color: #fff;'>التقارير الحية</h4>", unsafe_allow_html=True)
-                    st.markdown("<div class='scanner-header'>الاختراق (اليوم)</div>", unsafe_allow_html=True)
-                    if not df_bup.empty:
-                        html_bup = "<table class='qafah-table'><tr><th>السهم</th><th>التاريخ</th></tr>"
-                        for _, row in df_bup.iterrows(): html_bup += f"<tr><td>{row['السهم']}</td><td>{row['التاريخ']}</td></tr>"
-                        html_bup += "</table>"
-                        st.markdown(html_bup, unsafe_allow_html=True)
-                    else:
-                        st.markdown("<table class='qafah-table'><tr><th class='th-gray'>لا توجد اختراقات اليوم</th></tr></table>", unsafe_allow_html=True)
-                        
-                    st.markdown("<div class='scanner-header-red'>الكسر (اليوم)</div>", unsafe_allow_html=True)
-                    if not df_bdn.empty:
-                        html_bdn = "<table class='qafah-table'><tr><th class='th-red'>السهم</th><th class='th-red'>التاريخ</th></tr>"
-                        for _, row in df_bdn.iterrows(): html_bdn += f"<tr><td>{row['السهم']}</td><td>{row['التاريخ']}</td></tr>"
-                        html_bdn += "</table>"
-                        st.markdown(html_bdn, unsafe_allow_html=True)
+                    st.markdown("<div class='scanner-header-gray'>التغييرات الأخيرة في الاتجاه</div>", unsafe_allow_html=True)
+                    
+                    c_txt1, c_inp, c_txt2 = st.columns([2.5, 1, 0.5])
+                    with c_txt1: st.markdown("<p style='font-size:13px; margin-top:8px; text-align:right; color:#ccc;'>عرض التغييرات خلال آخر:</p>", unsafe_allow_html=True)
+                    with c_inp: n_days = st.number_input("صف", min_value=1, max_value=30, value=3, label_visibility="collapsed")
+                    with c_txt2: st.markdown("<p style='font-size:13px; margin-top:8px; text-align:right; color:#ccc;'>صف</p>", unsafe_allow_html=True)
 
-                    st.markdown("<div class='scanner-header-blue'>الترند الصاعد</div>", unsafe_allow_html=True)
-                    if not df_tup.empty:
-                        html_tup = "<table class='qafah-table'><tr><th class='th-blue'>السهم</th><th class='th-blue'>البداية</th></tr>"
-                        for _, row in df_tup.iterrows(): html_tup += f"<tr><td>{row['السهم']}</td><td>{row['تاريخ البداية']}</td></tr>"
-                        html_tup += "</table>"
-                        st.markdown(html_tup, unsafe_allow_html=True)
+                    df_up_recent = df_recent_up[df_recent_up['منذ كم صف'] <= n_days].sort_values(by='منذ كم صف') if not df_recent_up.empty else pd.DataFrame()
+                    df_dn_recent = df_recent_down[df_recent_down['منذ كم صف'] <= n_days].sort_values(by='منذ كم صف') if not df_recent_down.empty else pd.DataFrame()
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    if not df_up_recent.empty:
+                        html_up = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>منذ كم صف</th><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th><th style='background-color:#4CAF50; color:white;'>السهم</th></tr>"
+                        for _, row in df_up_recent.iterrows():
+                            stock_span = f"<span style='background-color: #1565c0; color: white; padding: 2px 6px; border-radius: 3px;'>{row['السهم']}</span>"
+                            html_up += f"<tr><td>{row['منذ كم صف']}</td><td>{row['تاريخ']}</td><td>{stock_span}</td></tr>"
+                        html_up += "</table>"
+                        st.markdown(html_up, unsafe_allow_html=True)
                     else:
-                        st.markdown("<table class='qafah-table'><tr><th class='th-gray'>لا توجد مسارات صاعدة</th></tr></table>", unsafe_allow_html=True)
+                        st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th></tr><tr><td style='color:gray;'>لا توجد تغيرات صاعدة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
+
+                    if not df_dn_recent.empty:
+                        html_dn = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>منذ كم صف</th><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th><th style='background-color:#e53935; color:white;'>السهم</th></tr>"
+                        for _, row in df_dn_recent.iterrows():
+                            html_dn += f"<tr><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['منذ كم صف']}</td><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['تاريخ']}</td><td style='color:#ef9a9a; font-weight:bold; background-color:rgba(229, 57, 53, 0.1);'>{row['السهم']}</td></tr>"
+                        html_dn += "</table>"
+                        st.markdown(html_dn, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th></tr><tr><td style='color:gray;'>لا توجد تغيرات هابطة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
+
+            # ==========================================
+            # 🗂️ التبويب 5: ماسح السوق الشامل (Loads) 
+            # ==========================================
+            with tab5:
+                if not df_loads.empty:
+                    # إضافة إحصائيات 3 أيام للأزرار العلوية
+                    top_3d = len(df_loads[df_loads['load diff 3d %'] > 0])
+                    worst_3d = len(df_loads[df_loads['load diff 3d %'] < 0])
+                    top_5d = len(df_loads[df_loads['load diff 5d %'] > 0])
+                    worst_5d = len(df_loads[df_loads['load diff 5d %'] < 0])
+                    top_10d = len(df_loads[df_loads['load diff 10d %'] > 0])
+                    worst_10d = len(df_loads[df_loads['load diff 10d %'] < 0])
+
+                    st.markdown(f"""
+                    <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom: 20px;">
+                        <span class="filter-btn-active">All ({len(df_loads)})</span>
+                        <span class="filter-btn">Top 3d Gainers ({top_3d})</span>
+                        <span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 3d Losers ({worst_3d})</span>
+                        <span class="filter-btn">Top 5d Gainers ({top_5d})</span>
+                        <span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 5d Losers ({worst_5d})</span>
+                        <span class="filter-btn">Top 10d Gainers ({top_10d})</span>
+                        <span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 10d Losers ({worst_10d})</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    df_loads_styled = df_loads.copy()
+                    
+                    df_loads_styled['load diff 1d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 1d %']:.4f}% {x['1d_cat']}", axis=1)
+                    df_loads_styled['load diff 3d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 3d %']:.4f}% {x['3d_cat']}", axis=1)
+                    df_loads_styled['load diff 5d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 5d %']:.4f}% {x['5d_cat']}", axis=1)
+                    df_loads_styled['load diff 10d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 10d %']:.4f}% {x['10d_cat']}", axis=1)
+                    
+                    df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'])
+                    
+                    def color_loads_values(val):
+                        if isinstance(val, str) and "%" in val:
+                            if "-" in val: return 'color: #f44336; font-weight: bold;'
+                            elif val.startswith("0.0000"): return 'color: gray;'
+                            else: return 'color: #4caf50; font-weight: bold;'
+                        elif isinstance(val, int) and (val > 0): return 'color: #4caf50; font-weight: bold;'
+                        elif isinstance(val, int) and (val < 0): return 'color: #f44336; font-weight: bold;'
+                        return ''
+
+                    st.dataframe(
+                        df_loads_styled.style.applymap(color_loads_values),
+                        use_container_width=True,
+                        height=550,
+                        hide_index=True
+                    )
+                else:
+                    st.info("جاري تحميل بيانات السوق...")
+
+            # ==========================================
+            # 🚨 التبويب 6: سجل التنبيهات (Alerts)
+            # ==========================================
+            with tab6:
+                if not df_alerts.empty:
+                    def color_alerts(val):
+                        if isinstance(val, str):
+                            if "صاعدة" in val or "شراء" in val or "🟢" in val or "🚀" in val: return 'color: #4caf50; font-weight: bold;'
+                            if "كسر" in val or "سلبية" in val or "🔴" in val or "⚠️" in val: return 'color: #f44336; font-weight: bold;'
+                        return ''
+                    
+                    st.dataframe(
+                        df_alerts.style.applymap(color_alerts),
+                        use_container_width=True,
+                        height=550,
+                        hide_index=True
+                    )
+                else:
+                    st.success("السوق هادئ حالياً.. لا توجد تنبيهات قوية على القائمة المراقبة.")
 
             with tab2:
-                if ticker.upper().endswith('.SR'):
-                    tv_symbol = f"TADAWUL:{ticker.upper().replace('.SR', '')}"
-                else:
-                    tv_symbol = ticker.upper()
-                
-                tradingview_html = f"""
-                <div class="tradingview-widget-container" style="height:700px;width:100%">
-                  <div id="tradingview_masa" style="height:100%;width:100%"></div>
-                  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-                  <script type="text/javascript">
-                  new TradingView.widget(
-                  {{
-                  "autosize": true,
-                  "symbol": "{tv_symbol}",
-                  "interval": "D",
-                  "timezone": "Asia/Riyadh",
-                  "theme": "dark",
-                  "style": "1",
-                  "locale": "ar_AE",
-                  "enable_publishing": false,
-                  "backgroundColor": "#1a1c24",
-                  "gridColor": "#2d303e",
-                  "hide_top_toolbar": false,
-                  "hide_legend": false,
-                  "save_image": false,
-                  "container_id": "tradingview_masa",
-                  "toolbar_bg": "#1e2129",
-                  "studies": [
-                    "Volume@tv-basicstudies",
-                    "RSI@tv-basicstudies",
-                    "MASimple@tv-basicstudies",
-                    "MASimple@tv-basicstudies"
-                  ]
-                }}
-                  );
-                  </script>
-                </div>
-                """
+                if ticker.upper().endswith('.SR'): tv_symbol = f"TADAWUL:{ticker.upper().replace('.SR', '')}"
+                else: tv_symbol = ticker.upper()
+                tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "D","timezone": "Asia/Riyadh","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 
             with tab3:
                 df_plot = df.tail(300) 
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
-                
                 fig.add_trace(go.Candlestick(x=df_plot.index, open=df_plot['Open'], high=df_plot['High'], low=df_plot['Low'], close=df_plot['Close'], name='السعر'), row=1, col=1)
-                
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_200'], line=dict(color='orange', width=2.5), name='MA 200 (V9)'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='cyan', width=2), name='MA 50 (V9)'), row=1, col=1)
-
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_High'], line=dict(color='white', width=2, dash='dot'), name='سقف زيرو'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_Low'], line=dict(color='orange', width=2, dash='dot'), name='قاع زيرو'), row=1, col=1)
-                
                 colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]
                 fig.add_trace(go.Bar(x=df_plot.index, y=df_plot['Volume'], marker_color=colors, name='السيولة'), row=2, col=1)
-                
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['RSI'], line=dict(color='purple', width=2), name='RSI 14'), row=3, col=1)
                 fig.add_hline(y=70, line_dash="dot", row=3, col=1, line_color="red")
                 fig.add_hline(y=50, line_dash="solid", row=3, col=1, line_color="gray", opacity=0.5) 
                 fig.add_hline(y=30, line_dash="dot", row=3, col=1, line_color="green")
-                
                 fig.update_layout(height=800, template='plotly_dark', showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-            # ==========================================
-            # 📋 التبويب 4: الجدول الشامل والكامل
-            # ==========================================
             with tab4:
-                table = pd.DataFrame({
-                    'التاريخ': df.index.strftime('%Y-%m-%d'),
-                    'الإغلاق': df['Close'].round(2),
-                    'عداد الاتجاه': df['Counter'].astype(int), # 🚀 عاد العداد الملكي!
-                    'MA 50': df['SMA_50'].round(2),
-                    'MA 200': df['SMA_200'].round(2),
-                    'تغير 1 يوم': df['Load_Diff_1D'],
-                    'تراكمي 3 أيام': df['Load_Diff_3D'], 
-                    'تراكمي 5 أيام': df['Load_Diff_5D'], # 🚀 عاد التراكمي الذهبي!
-                    'تراكمي 10 أيام': df['Load_Diff_10D'],
-                    'حجم السيولة': df['Volume']
-                })
+                table = pd.DataFrame({'التاريخ': df.index.strftime('%Y-%m-%d'),'الإغلاق': df['Close'].round(2),'عداد الاتجاه': df['Counter'].astype(int),'MA 50': df['SMA_50'].round(2),'MA 200': df['SMA_200'].round(2),'تغير 1 يوم': df['Load_Diff_1D'],'تراكمي 3 أيام': df['Load_Diff_3D'],'تراكمي 5 أيام': df['Load_Diff_5D'],'تراكمي 10 أيام': df['Load_Diff_10D'],'حجم السيولة': df['Volume']})
                 display_table = table.tail(15).iloc[::-1].copy()
                 display_table['حجم السيولة'] = display_table['حجم السيولة'].apply(lambda x: f"{x:,}")
                 display_table.set_index('التاريخ', inplace=True)

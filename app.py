@@ -36,22 +36,118 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); text-align: center;}
 .filter-btn { border: 1px solid #4caf50; color: #4caf50; background-color: transparent; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
 .filter-btn-active { background-color: #4caf50; color: white; border: 1px solid #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
-/* تصميم أزرار اختيار السوق */
 div.stRadio > div[role="radiogroup"] { justify-content: center; margin-bottom: 15px; }
+
+/* 🧠 تصميم صندوق ذكاء ماسة (AI) */
+.ai-box { background: linear-gradient(145deg, #12141a, #1a1c24); border-top: 4px solid #00d2ff; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,210,255,0.15);}
+.ai-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d303e; padding-bottom: 15px; margin-bottom: 15px;}
+.ai-title { color: #00d2ff; font-weight: bold; font-size: 24px; margin: 0;}
+.ai-score-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: white; border: 4px solid; background-color: rgba(0,0,0,0.2);}
+.ai-decision-text { font-size: 30px; font-weight: bold; margin-bottom: 20px; text-align: center; background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px;}
+.ai-reason-item { font-size: 16px; color: #e0e0e0; margin-bottom: 15px; line-height: 1.8; padding-right: 15px; border-right: 3px solid #2d303e;}
+.ai-table { width: 100%; text-align: center; border-collapse: collapse; margin-top: 10px; background-color: #1e2129; border-radius: 8px; overflow: hidden;}
+.ai-table th { background-color: #2d303e; color: white; padding: 12px; font-size: 15px;}
+.ai-table td { padding: 12px; border-bottom: 1px solid #2d303e; font-weight: bold; font-size: 14px;}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # ==========================================
-# ⚡ 2. قوائم الأسواق ومحركات المسح
+# ⚡ 2. محركات ذكاء ماسة (AI Engine)
+# ==========================================
+def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high):
+    if pd.isna(ma50) or pd.isna(ma200): 
+        return 0, "جاري جمع البيانات ⏳", "gray", ["بيانات السهم غير كافية لحساب متوسط 200 يوم بدقة."]
+    
+    score = 50
+    reasons = []
+    
+    # 1. تحليل الاتجاه العام (MA200)
+    if last_close > ma200:
+        score += 15
+        reasons.append("✅ <b>الاتجاه العام (MA 200):</b> السهم يتداول فوق بوصلة الهامور في مسار صاعد آمن استثمارياً.")
+    else:
+        score -= 20
+        reasons.append("❌ <b>الاتجاه العام (MA 200):</b> السهم كسر متوسط 200 ودخل في مسار هابط (سلبي وخطير).")
+        
+    # 2. تحليل زخم المضاربة (MA50)
+    if last_close > ma50:
+        dist = ((last_close - ma50) / ma50) * 100
+        if dist < 3:
+            score += 20
+            reasons.append("💎 <b>دعم المضارب (MA 50):</b> السهم يرتد حالياً من الدعم الذهبي (فرصة صيد ممتازة ومخاطرة منخفضة جدًا).")
+        elif dist > 8:
+            score -= 10
+            reasons.append(f"⚠️ <b>التضخم السعري:</b> السعر طار وابتعد عن خط الدفاع الأول بنسبة {dist:.1f}%. (المطاط مشدود، يُفضل الحذر أو جني الأرباح).")
+        else:
+            score += 10
+            reasons.append("✅ <b>زخم المضاربة (MA 50):</b> السهم يحافظ على إيجابيته وثباته التام فوق خط الدفاع.")
+    else:
+        score -= 15
+        reasons.append("🔴 <b>زخم المضاربة (MA 50):</b> السهم كسر متوسط 50 ويمر بمرحلة ضعف أو تصحيح.")
+
+    # 3. تحليل العداد
+    if counter > 0:
+        if counter <= 3:
+            score += 15
+            reasons.append(f"🚀 <b>عداد الاتجاه ({counter}):</b> الموجة الصاعدة في بدايتها (إشارة مبكرة للدخول).")
+        elif counter >= 6:
+            score -= 10
+            reasons.append(f"⚠️ <b>عداد الاتجاه ({counter}):</b> السهم يصعد منذ فترة متتالية طويلة، احتمالية التصحيح وجني الأرباح واردة جداً.")
+        else:
+            score += 5
+            reasons.append(f"📈 <b>عداد الاتجاه ({counter}):</b> السهم في منتصف موجة صاعدة مستقرة.")
+    elif counter < 0:
+        if counter >= -3:
+            score -= 5
+            reasons.append(f"🔻 <b>عداد الاتجاه ({counter}):</b> السهم يمر بتصحيح هابط في أيامه الأولى.")
+        else:
+            score -= 15
+            reasons.append(f"🩸 <b>عداد الاتجاه ({counter}):</b> نزيف مستمر وتصريف. لا تلتقط السكين الساقطة حتى يظهر ارتداد صريح ويصبح العداد أخضر.")
+
+    # 4. تحليل القوة النسبية RSI
+    if 40 <= rsi <= 65:
+        score += 10
+        reasons.append(f"✅ <b>مؤشر الزخم (RSI {rsi:.1f}):</b> المؤشر صحي ولديه مساحة واسعة لمواصلة الصعود دون تشبع.")
+    elif rsi > 70:
+        score -= 15
+        reasons.append(f"🚨 <b>مؤشر الزخم (RSI {rsi:.1f}):</b> السهم متضخم جداً (تشبع شرائي). الحذر من هبوط مفاجئ.")
+    elif rsi < 30:
+        score += 15
+        reasons.append(f"🛒 <b>مؤشر الزخم (RSI {rsi:.1f}):</b> تشبع بيعي عميق. السهم انضغط بقوة ومناطق الارتداد قريبة جداً.")
+
+    # 5. تحليل زيرو انعكاس
+    if pd.notna(zr_low) and last_close <= zr_low * 1.05:
+        score += 15
+        reasons.append("🎯 <b>زيرو انعكاس:</b> السعر يختبر قاع القناة (منطقة ارتداد مؤسساتية عالية الدقة).")
+    elif pd.notna(zr_high) and last_close >= zr_high * 0.97:
+        score -= 15
+        reasons.append("🧱 <b>زيرو انعكاس:</b> السعر يصطدم بسقف القناة (مقاومة تاريخية شرسة، يفضل جني أرباح أو الحذر).")
+
+    # تحديد القرار النهائي (تأكد أن السكور بين 0 و 100)
+    score = int(max(0, min(100, score)))
+    
+    if score >= 80:
+        return score, "شراء قوي 🟢🚀", "#00E676", reasons
+    elif 60 <= score < 80:
+        if counter > 5 or rsi > 65:
+            return score, "احتفاظ / جني أرباح تدريجي 🟡⚠️", "#FFD700", reasons
+        return score, "شراء / تجميع 🟢📈", "#4CAF50", reasons
+    elif 40 <= score < 60:
+        return score, "مراقبة / حيرة فنية ⚪⏳", "#9E9E9E", reasons
+    elif 20 <= score < 40:
+        return score, "سلبية / لا تشتري 🔴🔻", "#FF5252", reasons
+    else:
+        return score, "خروج / انهيار ⛔🩸", "#D32F2F", reasons
+
+# ==========================================
+# ⚡ 3. قوائم الأسواق والمسح الآلي
 # ==========================================
 @st.cache_data(ttl=900)
 def get_stock_data(ticker_symbol):
     return yf.Ticker(ticker_symbol).history(period="3y") 
 
-# 🇸🇦 قائمة السوق السعودي
-SAUDI_WATCHLIST = ['1120.SR', '2222.SR', '2010.SR', '1180.SR', '7010.SR', '4165.SR', '4210.SR', '2360.SR', '1211.SR', '2020.SR', '4050.SR', '4190.SR', '2280.SR']
-# 🇺🇸 قائمة السوق الأمريكي (عمالقة التكنولوجيا والمؤشرات)
+SAUDI_WATCHLIST = ['1120.SR', '2222.SR', '2010.SR', '1180.SR', '7010.SR', '4165.SR', '4210.SR', '2360.SR', '1211.SR', '2020.SR', '4050.SR', '4190.SR', '2280.SR', '4030.SR']
 US_WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'META', 'GOOGL', 'AMD', 'NFLX', 'PLTR', 'COIN', 'SPY', 'QQQ']
 
 def get_cat(val):
@@ -65,7 +161,7 @@ def get_cat(val):
 @st.cache_data(ttl=1800)
 def scan_market(watchlist_list):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
-    loads_list, alerts_list = [], []
+    loads_list, alerts_list, ai_picks = [], [], []
     
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
     now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -73,19 +169,23 @@ def scan_market(watchlist_list):
     for tk in watchlist_list:
         try:
             df_s = yf.Ticker(tk).history(period="1y")
-            if len(df_s) > 20:
+            if len(df_s) > 200:
                 c, h, l = df_s['Close'], df_s['High'], df_s['Low']
                 sym = tk.replace('.SR', '')
                 
+                ma50 = c.rolling(50).mean()
+                ma200 = c.rolling(200).mean()
                 h3, l3 = h.rolling(3).max().shift(1), l.rolling(3).min().shift(1)
                 zr_h = h.rolling(300, min_periods=10).max().shift(1)
                 zr_l = l.rolling(300, min_periods=10).min().shift(1)
+                
+                up, down = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
+                rsi = 100 - (100 / (1 + (up.ewm(com=13, adjust=False).mean() / down.ewm(com=13, adjust=False).mean())))
                 
                 last_c, prev_c = c.iloc[-1], c.iloc[-2]
                 last_h3, prev_h3 = h3.iloc[-1], h3.iloc[-2]
                 last_l3, prev_l3 = l3.iloc[-1], l3.iloc[-2]
 
-                # --- عداد الاتجاه ---
                 diff = c.diff()
                 direction = np.where(diff > 0, 1, np.where(diff < 0, -1, 0))
                 counter = 0
@@ -100,29 +200,12 @@ def scan_market(watchlist_list):
                 if cur_count > 0: recent_up.append({"السهم": sym, "تاريخ": df_s.index[-cur_count].strftime("%Y-%m-%d"), "منذ كم صف": cur_count})
                 elif cur_count < 0: recent_down.append({"السهم": sym, "تاريخ": df_s.index[-abs(cur_count)].strftime("%Y-%m-%d"), "منذ كم صف": abs(cur_count)})
 
-                # --- حسابات التراكمي الشاملة ---
                 pct_1d = (c.iloc[-1] / c.iloc[-2] - 1) * 100 if len(c)>1 else 0
                 pct_3d = (c.iloc[-1] / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
                 pct_5d = (c.iloc[-1] / c.iloc[-6] - 1) * 100 if len(c)>5 else 0
                 pct_10d = (c.iloc[-1] / c.iloc[-11] - 1) * 100 if len(c)>10 else 0
 
-                loads_list.append({
-                    "holding ticker": sym,
-                    "date Latest Date": df_s.index[-1].strftime("%Y-%m-%d"),
-                    "daily direction counter": int(cur_count),
-                    "hitting_days": abs(cur_count),
-                    "load diff 1d %": pct_1d,
-                    "1d_cat": get_cat(pct_1d),
-                    "Top G/L 3Days": "✅" if pct_3d > 0 else "❌",
-                    "load diff 3d %": pct_3d,
-                    "3d_cat": get_cat(pct_3d),
-                    "Top G/L 5Days": "✅" if pct_5d > 0 else "❌",
-                    "load diff 5d %": pct_5d,
-                    "5d_cat": get_cat(pct_5d),
-                    "Top G/L 10days": "✅" if pct_10d > 0 else "❌",
-                    "load diff 10d %": pct_10d,
-                    "10d_cat": get_cat(pct_10d),
-                })
+                loads_list.append({"holding ticker": sym,"date Latest Date": df_s.index[-1].strftime("%Y-%m-%d"),"daily direction counter": int(cur_count),"hitting_days": abs(cur_count),"load diff 1d %": pct_1d,"1d_cat": get_cat(pct_1d),"Top G/L 3Days": "✅" if pct_3d > 0 else "❌","load diff 3d %": pct_3d,"3d_cat": get_cat(pct_3d),"Top G/L 5Days": "✅" if pct_5d > 0 else "❌","load diff 5d %": pct_5d,"5d_cat": get_cat(pct_5d),"Top G/L 10days": "✅" if pct_10d > 0 else "❌","load diff 10d %": pct_10d,"10d_cat": get_cat(pct_10d)})
 
                 if last_c > last_h3 and prev_c <= prev_h3: 
                     breakouts.append({"السهم": sym, "التاريخ": today_str})
@@ -130,43 +213,43 @@ def scan_market(watchlist_list):
                 if last_c < last_l3 and prev_c >= prev_l3: 
                     breakdowns.append({"السهم": sym, "التاريخ": today_str})
                     alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر 3 أيام هابط 🔴"})
-        except:
-            continue
-            
-    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list)
+
+                # 🧠 تغذية محرك ذكاء ماسة لاصطياد الفرص آلياً
+                ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1])
+                # نرشح فقط الأسهم التي تعطي إشارات واضحة (شراء قوي أو خروج)
+                if ai_score >= 70 or ai_score <= 30:
+                    ai_picks.append({"السهم": sym, "السعر": round(last_c, 2), "التقييم": ai_score, "القرار": ai_dec, "اللون": ai_col})
+
+        except: continue
+    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # --- الواجهة الرئيسية ---
-st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة العالمية (Global Quant)</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>منصة تحليل السيولة الذكية للسوقين السعودي والأمريكي 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي للسوق السعودي والأمريكي 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
 
 # ==========================================
-# 🔍 3. صندوق البحث المركزي (محدث ليدعم السوقين)
+# 🔍 3. صندوق البحث المركزي
 # ==========================================
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
-
-# 🌐 إضافة قائمة اختيار السوق
 market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
-default_ticker = "NVDA" if "الأمريكي" in market_choice else "4165.SR"
-placeholder_text = "مثال: NVDA, TSLA, AAPL" if "الأمريكي" in market_choice else "مثال: 4165.SR, 2222.SR"
+default_ticker = "NVDA" if "الأمريكي" in market_choice else "4030.SR"
+placeholder_text = "مثال: NVDA, AAPL" if "الأمريكي" in market_choice else "مثال: 4165.SR, 4030.SR"
 
 col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
-with col_search1:
-    ticker = st.text_input(f"🎯 رمز السهم ({placeholder_text}):", value=default_ticker, label_visibility="collapsed")
-with col_search2:
-    analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
+with col_search1: ticker = st.text_input(f"🎯 رمز السهم ({placeholder_text}):", value=default_ticker, label_visibility="collapsed")
+with col_search2: analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
 st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
-    ticker = ticker.upper() # تحويل الحروف إلى كبيرة تلقائياً لتفادي الأخطاء
-    # تحديد القائمة المطلوبة للمسح بناءً على اختيار المستخدم
+    ticker = ticker.upper() 
     selected_watchlist = US_WATCHLIST if "الأمريكي" in market_choice else SAUDI_WATCHLIST
     
-    with st.spinner(f"جاري مسح {market_choice} وبناء جداول الرادار..."):
+    with st.spinner(f"جاري مسح {market_choice} وتحليل البيانات بواسطة (ذكاء ماسة 🧠)..."):
         df = get_stock_data(ticker) 
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts = scan_market(selected_watchlist)
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market(selected_watchlist)
         
         if df.empty:
-            st.error("❌ السهم غير موجود! تذكر: أضف (.SR) للأسهم السعودية (مثال: 2222.SR)، والأسهم الأمريكية بدون إضافات (مثال: AAPL).")
+            st.error("❌ السهم غير موجود! تذكر: أضف (.SR) للأسهم السعودية.")
         else:
             close, high, low = df['Close'], df['High'], df['Low']
 
@@ -190,30 +273,6 @@ if analyze_btn or ticker:
                 counter.append(curr)
             df['Counter'] = counter
             
-            def categorize(val):
-                if pd.isna(val): return ""
-                abs_val = abs(val)
-                if abs_val >= 1.0: cat = "MAJOR"
-                elif abs_val >= 0.1: cat = "HIGH"
-                else: cat = "MEDIUM"
-                if val > 0: return f"🟢 {val:.2f}% ({cat})"
-                elif val < 0: return f"🔴 {val:.2f}% ({cat})"
-                else: return f"⚪ {val:.2f}% ({cat})"
-                
-            df['Load_Diff_1D'] = df['1d_%'].apply(categorize)
-            df['Load_Diff_3D'] = df['3d_%'].apply(categorize) 
-            df['Load_Diff_5D'] = df['5d_%'].apply(categorize)
-            df['Load_Diff_10D'] = df['10d_%'].apply(categorize)
-
-            df['High_3D'] = high.rolling(3).max().shift(1)
-            df['Low_3D'] = low.rolling(3).min().shift(1)
-            df['High_4D'] = high.rolling(4).max().shift(1)
-            df['Low_4D'] = low.rolling(4).min().shift(1)
-            df['High_10D'] = high.rolling(10).max().shift(1)
-            df['Low_10D'] = low.rolling(10).min().shift(1)
-            df['High_15D'] = high.rolling(15).max().shift(1)
-            df['Low_15D'] = low.rolling(15).min().shift(1)
-            
             delta_rsi = close.diff()
             up = delta_rsi.clip(lower=0)
             down = -1 * delta_rsi.clip(upper=0)
@@ -225,28 +284,25 @@ if analyze_btn or ticker:
             df['ZR_Low'] = low.rolling(window=300, min_periods=10).min().shift(1)
 
             last_close = close.iloc[-1]
-            prev_close = close.iloc[-2]
-            pct_change = ((last_close - prev_close) / prev_close) * 100
-            last_sma200, last_sma50 = df['SMA_200'].iloc[-1], df['SMA_50'].iloc[-1]
-            last_vol, avg_vol = df['Volume'].iloc[-1], df['Vol_SMA_20'].iloc[-1]
-            last_zr_high, last_zr_low = df['ZR_High'].iloc[-1], df['ZR_Low'].iloc[-1]
+            pct_change = ((last_close - close.iloc[-2]) / close.iloc[-2]) * 100
+            last_sma200 = df['SMA_200'].iloc[-1]
+            last_sma50 = df['SMA_50'].iloc[-1]
+            last_vol = df['Volume'].iloc[-1]
+            avg_vol = df['Vol_SMA_20'].iloc[-1]
+            last_zr_high = df['ZR_High'].iloc[-1]
+            last_zr_low = df['ZR_Low'].iloc[-1]
+            last_rsi = df['RSI'].iloc[-1]
+            last_counter = df['Counter'].iloc[-1]
 
             if pd.notna(last_sma200) and pd.notna(last_sma50):
-                if last_close > last_sma200 and last_close > last_sma50: trend, trend_color = "مسار (V9) صاعد 🚀", "🟢"
-                elif last_close < last_sma200 and last_close < last_sma50: trend, trend_color = "مسار (V9) هابط 🔴", "🔴"
+                if last_close > last_sma200 and last_close > last_sma50: trend, trend_color = "مسار صاعد 🚀", "🟢"
+                elif last_close < last_sma200 and last_close < last_sma50: trend, trend_color = "مسار هابط 🔴", "🔴"
                 else: trend, trend_color = "تذبذب (حيرة) ⚖️", "🟡"
             else:
                 trend, trend_color = "جاري الحساب...", "⚪"
 
-            if last_vol > (avg_vol * 1.5): vol_status, vol_color = "سيولة عالية", "🔥"
-            elif last_vol > avg_vol: vol_status, vol_color = "سيولة جيدة", "📈"
-            else: vol_status, vol_color = "سيولة ضعيفة", "❄️"
-            
-            if last_close >= last_zr_high * 0.98: zr_status, zr_color = "يختبر سقف زيرو", "⚠️"
-            elif last_close <= last_zr_low * 1.05: zr_status, zr_color = "يختبر قاع زيرو", "💎"
-            else: zr_status, zr_color = "في منتصف القناة", "⚖️"
-
-            # 🌍 إظهار العملة المناسبة بناءً على السوق
+            vol_status, vol_color = ("سيولة عالية", "🔥") if last_vol > (avg_vol * 1.5) else ("سيولة جيدة", "📈") if last_vol > avg_vol else ("سيولة ضعيفة", "❄️")
+            zr_status, zr_color = ("يختبر سقف زيرو", "⚠️") if last_close >= last_zr_high * 0.98 else ("يختبر قاع زيرو", "💎") if last_close <= last_zr_low * 1.05 else ("في منتصف القناة", "⚖️")
             currency = "$" if "الأمريكي" in market_choice or not ticker.endswith('.SR') else "ريال"
 
             st.markdown(f"### 🤖 قراءة استراتيجية ماسة لسهم ({ticker}):")
@@ -257,7 +313,11 @@ if analyze_btn or ticker:
             m4.metric(f"قراءة زيرو {zr_color}", zr_status)
             st.markdown("<br>", unsafe_allow_html=True)
 
-            tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
+            # ==========================================
+            # 🧠 التبويب الأول والأهم: ذكاء ماسة (AI)
+            # ==========================================
+            tab_ai, tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
+                "🧠 ذكاء ماسة (AI) 🆕",
                 "🎯 مخطط الاختراقات", 
                 "🗂️ ماسح السوق (Loads)",
                 "🚨 رادار التنبيهات",
@@ -266,6 +326,40 @@ if analyze_btn or ticker:
                 "📋 بيانات السهم"
             ])
 
+            with tab_ai:
+                # 1. التقرير الآلي للسهم المبحوث عنه
+                ai_score, ai_decision, ai_color, ai_reasons = get_ai_analysis(last_close, last_sma50, last_sma200, last_rsi, last_counter, last_zr_low, last_zr_high)
+                
+                st.markdown(f"""
+                <div class="ai-box">
+                    <div class="ai-header-flex">
+                        <div class="ai-title">🤖 التقرير الآلي لسهم ({ticker}) بناءً على خوارزمية V9</div>
+                        <div class="ai-score-circle" style="border-color: {ai_color}; color: {ai_color};">
+                            {ai_score}
+                        </div>
+                    </div>
+                    <div class="ai-decision-text" style="color: {ai_color};">
+                        القرار: {ai_decision}
+                    </div>
+                    <div style="margin-top: 20px;">
+                        {''.join([f'<div class="ai-reason-item" dir="rtl">{r}</div>' for r in ai_reasons])}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # 2. اصطيادات الذكاء الاصطناعي من السوق العام
+                st.markdown("#### 🎯 ترشيحات الذكاء الاصطناعي للسوق (من القائمة الحالية):")
+                if not df_ai_picks.empty:
+                    df_ai_disp = df_ai_picks.sort_values(by="التقييم", ascending=False)
+                    html_ai = "<table class='ai-table' dir='rtl'><tr><th>السهم</th><th>السعر</th><th>التقييم الآلي (من 100)</th><th>القرار الخوارزمي</th></tr>"
+                    for _, row in df_ai_disp.iterrows():
+                        html_ai += f"<tr><td>{row['السهم']}</td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:18px;'>{row['التقييم']}</td><td style='color:{row['اللون']};'>{row['القرار']}</td></tr>"
+                    html_ai += "</table>"
+                    st.markdown(html_ai, unsafe_allow_html=True)
+                else:
+                    st.info("🤖 الخوارزمية لم تجد أسهم حالياً حققت شروط (الشراء القوي) أو (الهروب المباشر) في قائمة المسح. السوق قد يكون في مناطق حيرة وتذبذب.")
+
+            # (باقي التبويبات بدون تغيير كما هي تعمل بامتياز)
             with tab1:
                 col_chart, col_reports = st.columns([2.9, 1.4])
                 with col_chart:
@@ -277,7 +371,6 @@ if analyze_btn or ticker:
                     df_plot2 = df.tail(150)
                     fig2 = go.Figure()
                     fig2.add_trace(go.Scatter(x=df_plot2.index, y=df_plot2['Close'], mode='lines+markers', name='السعر', line=dict(color='dodgerblue', width=2), marker=dict(size=5)))
-                    
                     def add_channel(fig, h_col, l_col, color, dash, name, marker_color, marker_size, symbol_up, symbol_dn):
                         fig.add_trace(go.Scatter(x=df_plot2.index, y=df_plot2[h_col], line=dict(color=color, width=1.5, dash=dash, shape='hv'), name=f'مقاومة {name}'))
                         fig.add_trace(go.Scatter(x=df_plot2.index, y=df_plot2[l_col], line=dict(color=color, width=1.5, dash=dash, shape='hv'), name=f'دعم {name}'))
@@ -285,7 +378,6 @@ if analyze_btn or ticker:
                         bo_dn = df_plot2[(df_plot2['Close'] < df_plot2[l_col]) & (df_plot2['Close'].shift(1) >= df_plot2[l_col].shift(1))]
                         fig.add_trace(go.Scatter(x=bo_up.index, y=bo_up['Close'], mode='markers', marker=dict(symbol=symbol_up, size=marker_size, color=marker_color, line=dict(width=1, color='black')), name=f'اختراق {name}'))
                         fig.add_trace(go.Scatter(x=bo_dn.index, y=bo_dn['Close'], mode='markers', marker=dict(symbol=symbol_dn, size=marker_size, color='red', line=dict(width=1, color='black')), name=f'كسر {name}'))
-
                     if show_3d: add_channel(fig2, 'High_3D', 'Low_3D', 'orange', 'dot', '3 أيام', 'orange', 12, 'triangle-up', 'triangle-down')
                     if show_4d: add_channel(fig2, 'High_4D', 'Low_4D', '#4caf50', 'dash', '4 أيام', '#4caf50', 12, 'triangle-up', 'triangle-down')
                     if show_10d: add_channel(fig2, 'High_10D', 'Low_10D', '#9c27b0', 'solid', '10 أيام', '#9c27b0', 14, 'diamond', 'diamond-tall')
@@ -296,17 +388,13 @@ if analyze_btn or ticker:
                 with col_reports:
                     st.markdown("<h4 style='text-align: right; color: #fff;'>التقارير الحية</h4>", unsafe_allow_html=True)
                     st.markdown(f"<div class='scanner-header-gray'>التغييرات الأخيرة في الاتجاه</div>", unsafe_allow_html=True)
-                    
                     c_txt1, c_inp, c_txt2 = st.columns([2.5, 1, 0.5])
                     with c_txt1: st.markdown("<p style='font-size:13px; margin-top:8px; text-align:right; color:#ccc;'>عرض التغييرات خلال آخر:</p>", unsafe_allow_html=True)
                     with c_inp: n_days = st.number_input("صف", min_value=1, max_value=30, value=3, label_visibility="collapsed")
                     with c_txt2: st.markdown("<p style='font-size:13px; margin-top:8px; text-align:right; color:#ccc;'>صف</p>", unsafe_allow_html=True)
-
                     df_up_recent = df_recent_up[df_recent_up['منذ كم صف'] <= n_days].sort_values(by='منذ كم صف') if not df_recent_up.empty else pd.DataFrame()
                     df_dn_recent = df_recent_down[df_recent_down['منذ كم صف'] <= n_days].sort_values(by='منذ كم صف') if not df_recent_down.empty else pd.DataFrame()
-
                     st.markdown("<br>", unsafe_allow_html=True)
-                    
                     if not df_up_recent.empty:
                         html_up = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>منذ كم صف</th><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th><th style='background-color:#4CAF50; color:white;'>السهم</th></tr>"
                         for _, row in df_up_recent.iterrows():
@@ -314,17 +402,13 @@ if analyze_btn or ticker:
                             html_up += f"<tr><td>{row['منذ كم صف']}</td><td>{row['تاريخ']}</td><td>{stock_span}</td></tr>"
                         html_up += "</table>"
                         st.markdown(html_up, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th></tr><tr><td style='color:gray;'>لا توجد تغيرات صاعدة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
-
+                    else: st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th></tr><tr><td style='color:gray;'>لا توجد تغيرات صاعدة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
                     if not df_dn_recent.empty:
                         html_dn = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>منذ كم صف</th><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th><th style='background-color:#e53935; color:white;'>السهم</th></tr>"
-                        for _, row in df_dn_recent.iterrows():
-                            html_dn += f"<tr><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['منذ كم صف']}</td><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['تاريخ']}</td><td style='color:#ef9a9a; font-weight:bold; background-color:rgba(229, 57, 53, 0.1);'>{row['السهم']}</td></tr>"
+                        for _, row in df_dn_recent.iterrows(): html_dn += f"<tr><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['منذ كم صف']}</td><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['تاريخ']}</td><td style='color:#ef9a9a; font-weight:bold; background-color:rgba(229, 57, 53, 0.1);'>{row['السهم']}</td></tr>"
                         html_dn += "</table>"
                         st.markdown(html_dn, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th></tr><tr><td style='color:gray;'>لا توجد تغيرات هابطة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
+                    else: st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th></tr><tr><td style='color:gray;'>لا توجد تغيرات هابطة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
 
             with tab5:
                 if not df_loads.empty:
@@ -334,28 +418,13 @@ if analyze_btn or ticker:
                     worst_5d = len(df_loads[df_loads['load diff 5d %'] < 0])
                     top_10d = len(df_loads[df_loads['load diff 10d %'] > 0])
                     worst_10d = len(df_loads[df_loads['load diff 10d %'] < 0])
-
-                    st.markdown(f"""
-                    <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom: 20px;">
-                        <span class="filter-btn-active">All ({len(df_loads)})</span>
-                        <span class="filter-btn">Top 3d Gainers ({top_3d})</span>
-                        <span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 3d Losers ({worst_3d})</span>
-                        <span class="filter-btn">Top 5d Gainers ({top_5d})</span>
-                        <span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 5d Losers ({worst_5d})</span>
-                        <span class="filter-btn">Top 10d Gainers ({top_10d})</span>
-                        <span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 10d Losers ({worst_10d})</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
+                    st.markdown(f"""<div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom: 20px;"><span class="filter-btn-active">All ({len(df_loads)})</span><span class="filter-btn">Top 3d Gainers ({top_3d})</span><span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 3d Losers ({worst_3d})</span><span class="filter-btn">Top 5d Gainers ({top_5d})</span><span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 5d Losers ({worst_5d})</span><span class="filter-btn">Top 10d Gainers ({top_10d})</span><span class="filter-btn" style="color:#f44336; border-color:#f44336;">Top 10d Losers ({worst_10d})</span></div>""", unsafe_allow_html=True)
                     df_loads_styled = df_loads.copy()
-                    
                     df_loads_styled['load diff 1d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 1d %']:.4f}% {x['1d_cat']}", axis=1)
                     df_loads_styled['load diff 3d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 3d %']:.4f}% {x['3d_cat']}", axis=1)
                     df_loads_styled['load diff 5d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 5d %']:.4f}% {x['5d_cat']}", axis=1)
                     df_loads_styled['load diff 10d %'] = df_loads_styled.apply(lambda x: f"{x['load diff 10d %']:.4f}% {x['10d_cat']}", axis=1)
-                    
                     df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'])
-                    
                     def color_loads_values(val):
                         if isinstance(val, str) and "%" in val:
                             if "-" in val: return 'color: #f44336; font-weight: bold;'
@@ -364,15 +433,7 @@ if analyze_btn or ticker:
                         elif isinstance(val, int) and (val > 0): return 'color: #4caf50; font-weight: bold;'
                         elif isinstance(val, int) and (val < 0): return 'color: #f44336; font-weight: bold;'
                         return ''
-
-                    st.dataframe(
-                        df_loads_styled.style.applymap(color_loads_values),
-                        use_container_width=True,
-                        height=550,
-                        hide_index=True
-                    )
-                else:
-                    st.info("جاري تحميل بيانات السوق...")
+                    st.dataframe(df_loads_styled.style.applymap(color_loads_values), use_container_width=True, height=550, hide_index=True)
 
             with tab6:
                 if not df_alerts.empty:
@@ -381,15 +442,7 @@ if analyze_btn or ticker:
                             if "صاعدة" in val or "شراء" in val or "🟢" in val or "🚀" in val: return 'color: #4caf50; font-weight: bold;'
                             if "كسر" in val or "سلبية" in val or "🔴" in val or "⚠️" in val: return 'color: #f44336; font-weight: bold;'
                         return ''
-                    
-                    st.dataframe(
-                        df_alerts.style.applymap(color_alerts),
-                        use_container_width=True,
-                        height=550,
-                        hide_index=True
-                    )
-                else:
-                    st.success("السوق هادئ حالياً.. لا توجد تنبيهات قوية على القائمة المراقبة.")
+                    st.dataframe(df_alerts.style.applymap(color_alerts), use_container_width=True, height=550, hide_index=True)
 
             with tab2:
                 if ticker.endswith('.SR'): tv_symbol = f"TADAWUL:{ticker.replace('.SR', '')}"

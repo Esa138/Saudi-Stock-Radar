@@ -6,11 +6,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import warnings
 import datetime
+import streamlit.components.v1 as components # 🌟 الإضافة الجديدة السحرية لدمج تريدينج فيو
 
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 💎 1. إعدادات الهوية الاحترافية (إخفاء القائمة الجانبية تماماً)
+# 💎 1. إعدادات الهوية الاحترافية
 # ==========================================
 st.set_page_config(page_title="منصة ماسة 💎 | Masa Quant", layout="wide", page_icon="💎", initial_sidebar_state="collapsed")
 
@@ -35,10 +36,8 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .th-blue { background-color: #1565c0 !important; }
 .th-gray { background-color: #424242 !important; }
 
-/* إخفاء زر السهم الجانبي المزعج تماماً */
 [data-testid="collapsedControl"] { display: none; }
 
-/* تصميم فخم لصندوق البحث المركزي */
 .search-container {
     background: linear-gradient(145deg, #1e2129, #15171e);
     padding: 20px;
@@ -101,12 +100,11 @@ st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>
 st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>الرادار الخوارزمي لاصطياد الفرص وتتبع السيولة الذكية</p>", unsafe_allow_html=True)
 
 # ==========================================
-# 🔍 3. صندوق البحث المركزي (الحل الجذري)
+# 🔍 3. صندوق البحث المركزي
 # ==========================================
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
 with col_search1:
-    # المربع الجديد الواضح في المنتصف
     ticker = st.text_input("🎯 رمز السهم:", value="4165.SR", label_visibility="collapsed")
 with col_search2:
     analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
@@ -203,7 +201,15 @@ if analyze_btn or ticker:
             m4.metric(f"قراءة زيرو {zr_color}", zr_status)
             st.markdown("<br>", unsafe_allow_html=True)
 
-            tab1, tab2, tab3 = st.tabs(["🎯 مخطط الاختراقات والتقارير", "📊 الشارت الشامل (الشموع وزيرو)", "📋 جدول البيانات والتحميل"])
+            # ==========================================
+            # 🗂️ 4. نوافذ التبويب (أصبحت 4 نوافذ الآن)
+            # ==========================================
+            tab1, tab2, tab3, tab4 = st.tabs([
+                "🎯 مخطط الاختراقات والتقارير", 
+                "🌐 شارت TradingView التفاعلي 🆕", 
+                "📊 الشارت الخوارزمي (ماسة)", 
+                "📋 جدول البيانات والتحميل"
+            ])
 
             with tab1:
                 col_chart, col_reports = st.columns([3, 1.2])
@@ -267,7 +273,48 @@ if analyze_btn or ticker:
                     else:
                         st.markdown("<table class='qafah-table'><tr><th class='th-gray'>لا توجد مسارات صاعدة</th></tr></table>", unsafe_allow_html=True)
 
+            # ==========================================
+            # 📈 التبويب 2 الجديد (TradingView المدمج)
+            # ==========================================
             with tab2:
+                # تحويل رمز السهم للغة التي يفهمها تريدنق فيو (مثال: 4165.SR تصبح TADAWUL:4165)
+                if ticker.upper().endswith('.SR'):
+                    tv_symbol = f"TADAWUL:{ticker.upper().replace('.SR', '')}"
+                else:
+                    tv_symbol = ticker.upper()
+                
+                # كود تضمين مكتبة TradingView المتقدمة
+                tradingview_html = f"""
+                <div class="tradingview-widget-container" style="height:700px;width:100%">
+                  <div id="tradingview_masa" style="height:100%;width:100%"></div>
+                  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                  <script type="text/javascript">
+                  new TradingView.widget(
+                  {{
+                  "autosize": true,
+                  "symbol": "{tv_symbol}",
+                  "interval": "D",
+                  "timezone": "Asia/Riyadh",
+                  "theme": "dark",
+                  "style": "1",
+                  "locale": "ar_AE",
+                  "enable_publishing": false,
+                  "backgroundColor": "#1a1c24",
+                  "gridColor": "#2d303e",
+                  "hide_top_toolbar": false,
+                  "hide_legend": false,
+                  "save_image": false,
+                  "container_id": "tradingview_masa",
+                  "toolbar_bg": "#1e2129"
+                }}
+                  );
+                  </script>
+                </div>
+                """
+                # دمج الكود داخل الموقع
+                components.html(tradingview_html, height=700)
+
+            with tab3:
                 df_plot = df.tail(180) 
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
                 fig.add_trace(go.Candlestick(x=df_plot.index, open=df_plot['Open'], high=df_plot['High'], low=df_plot['Low'], close=df_plot['Close'], name='السعر'), row=1, col=1)
@@ -281,7 +328,7 @@ if analyze_btn or ticker:
                 fig.update_layout(height=800, template='plotly_dark', showlegend=False, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-            with tab3:
+            with tab4:
                 table = pd.DataFrame({
                     'التاريخ': df.index.strftime('%Y-%m-%d'),
                     'الإغلاق': df['Close'].round(2),

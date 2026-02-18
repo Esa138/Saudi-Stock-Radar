@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 💎 1. إعدادات الهوية والقاموس العربي الشامل
+# 💎 1. إعدادات الهوية والقاموس (السعودي + الأمريكي)
 # ==========================================
 st.set_page_config(page_title="منصة ماسة 💎 | Masa Quant", layout="wide", page_icon="💎", initial_sidebar_state="collapsed")
 
@@ -59,23 +59,43 @@ div.stRadio > div[role="radiogroup"] { justify-content: center; margin-bottom: 1
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# 🇸🇦 القاموس الشامل لأسهم السوق السعودي (160 شركة)
+# 🇸🇦 القاموس السعودي الشامل
 SAUDI_NAMES = {
     '1010.SR': 'الرياض', '1020.SR': 'الجزيرة', '1030.SR': 'الاستثمار', '1050.SR': 'السعودي الفرنسي', '1060.SR': 'الأول', '1080.SR': 'العربي', '1111.SR': 'تداول', '1120.SR': 'الراجحي', '1140.SR': 'البلاد', '1150.SR': 'الإنماء', '1180.SR': 'الأهلي', '1182.SR': 'أملاك', '1183.SR': 'الموارد',
     '1201.SR': 'تكوين', '1202.SR': 'مبكو', '1211.SR': 'معادن', '1212.SR': 'أسترا الصناعية', '1213.SR': 'نسيج', '1214.SR': 'شاكر', '1301.SR': 'أسلاك', '1302.SR': 'بوان', '1303.SR': 'الصناعات الكهربائية', '1304.SR': 'اليمامة للحديد', '1320.SR': 'أنابيب السعودية', '1321.SR': 'أنابيب الشرق', '1322.SR': 'أنابيب',
-    '2001.SR': 'كيمانول', '2010.SR': 'سابك', '2020.SR': 'المغذيات الزراعية', '2030.SR': 'المصافي', '2040.SR': 'الخزف السعودي', '2050.SR': 'مجموعة صافولا', '2060.SR': 'التصنيع', '2070.SR': 'الدوائية', '2080.SR': 'الغاز', '2081.SR': 'الخريف', '2082.SR': 'أكوا باور', '2083.SR': 'مرافق',
-    '2100.SR': 'وفرة', '2110.SR': 'الكابلات السعودية', '2120.SR': 'المتطورة', '2130.SR': 'صدق', '2140.SR': 'أميانتيت', '2150.SR': 'زجاج', '2170.SR': 'اللجين', '2180.SR': 'فيبكو', '2190.SR': 'سيسكو', '2200.SR': 'أنابيب', '2210.SR': 'نماء للكيماويات', '2220.SR': 'معدنية', '2222.SR': 'أرامكو السعودية', '2223.SR': 'لوبريف', '2230.SR': 'الكيميائية', '2240.SR': 'الزامل للصناعة', '2250.SR': 'المجموعة السعودية', '2270.SR': 'سدافكو', '2280.SR': 'المراعي', '2281.SR': 'تنمية', '2282.SR': 'المطاحن الأولى', '2283.SR': 'المطاحن الحديثة', '2290.SR': 'ينساب', '2300.SR': 'صناعة الورق', '2310.SR': 'سبكيم العالمية', '2330.SR': 'المتقدمة', '2350.SR': 'كيان السعودية', '2360.SR': 'الفخارية', '2380.SR': 'بترورابغ',
+    '2001.SR': 'كيمانول', '2010.SR': 'سابك', '2020.SR': 'المغذيات', '2030.SR': 'المصافي', '2040.SR': 'الخزف السعودي', '2050.SR': 'مجموعة صافولا', '2060.SR': 'التصنيع', '2070.SR': 'الدوائية', '2080.SR': 'الغاز', '2081.SR': 'الخريف', '2082.SR': 'أكوا باور', '2083.SR': 'مرافق',
+    '2100.SR': 'وفرة', '2110.SR': 'الكابلات', '2120.SR': 'المتطورة', '2130.SR': 'صدق', '2140.SR': 'أميانتيت', '2150.SR': 'زجاج', '2170.SR': 'اللجين', '2180.SR': 'فيبكو', '2190.SR': 'سيسكو', '2200.SR': 'أنابيب', '2210.SR': 'نماء', '2220.SR': 'معدنية', '2222.SR': 'أرامكو', '2223.SR': 'لوبريف', '2230.SR': 'الكيميائية', '2240.SR': 'الزامل', '2250.SR': 'المجموعة السعودية', '2270.SR': 'سدافكو', '2280.SR': 'المراعي', '2281.SR': 'تنمية', '2282.SR': 'المطاحن الأولى', '2283.SR': 'المطاحن الحديثة', '2290.SR': 'ينساب', '2300.SR': 'صناعة الورق', '2310.SR': 'سبكيم', '2330.SR': 'المتقدمة', '2350.SR': 'كيان السعودية', '2360.SR': 'الفخارية', '2380.SR': 'بترورابغ',
     '3010.SR': 'أسمنت العربية', '3020.SR': 'أسمنت اليمامة', '3030.SR': 'أسمنت السعودية', '3040.SR': 'أسمنت القصيم', '3050.SR': 'أسمنت الجنوبية', '3060.SR': 'أسمنت ينبع', '3080.SR': 'أسمنت الشرقية', '3090.SR': 'أسمنت تبوك', '3091.SR': 'أسمنت الجوف', '3092.SR': 'أسمنت المدينة', '3021.SR': 'أسمنت أم القرى', '3022.SR': 'أسمنت الرياض',
-    '4001.SR': 'أسواق العثيم', '4002.SR': 'المواساة', '4003.SR': 'إكسترا', '4004.SR': 'دله الصحية', '4005.SR': 'رعاية', '4007.SR': 'الحمادي', '4013.SR': 'سليمان الحبيب', '4014.SR': 'النهدي', '4015.SR': 'جمجوم فارما', '4020.SR': 'العقارية', '4030.SR': 'البحري', '4031.SR': 'مهارة', '4040.SR': 'سابتكو', '4050.SR': 'ساسكو', '4061.SR': 'أنعام القابضة', '4071.SR': 'العربية', '4081.SR': 'النايفات', '4090.SR': 'طيبة', '4100.SR': 'مكة', '4110.SR': 'باتك', '4130.SR': 'الباحة', '4140.SR': 'الصادرات', '4150.SR': 'التعمير', '4160.SR': 'ثمار', '4161.SR': 'بن داود', '4162.SR': 'المنجم', '4163.SR': 'الدواء', '4164.SR': 'أماك', '4165.SR': 'الماجد للعود', '4170.SR': 'شمس', '4180.SR': 'مجموعة فتيحي', '4190.SR': 'جرير', '4191.SR': 'أبو معطي', '4192.SR': 'عذيب', '4200.SR': 'الدريس', '4210.SR': 'الأبحاث والإعلام', '4220.SR': 'إعمار', '4230.SR': 'البحر الأحمر', '4240.SR': 'سينومي ريتيل', '4250.SR': 'جبل عمر', '4260.SR': 'بدجت السعودية', '4261.SR': 'ذيب', '4262.SR': 'لومي', '4280.SR': 'المملكة', '4290.SR': 'الخليج للتدريب', '4300.SR': 'دار الأركان', '4320.SR': 'الأندلس', '4321.SR': 'سينومي سنترز', '4322.SR': 'ريتال',
+    '4001.SR': 'أسواق العثيم', '4002.SR': 'المواساة', '4003.SR': 'إكسترا', '4004.SR': 'دله الصحية', '4005.SR': 'رعاية', '4007.SR': 'الحمادي', '4013.SR': 'سليمان الحبيب', '4014.SR': 'النهدي', '4015.SR': 'جمجوم فارما', '4020.SR': 'العقارية', '4030.SR': 'البحري', '4031.SR': 'مهارة', '4040.SR': 'سابتكو', '4050.SR': 'ساسكو', '4061.SR': 'أنعام القابضة', '4071.SR': 'العربية', '4081.SR': 'النايفات', '4090.SR': 'طيبة', '4100.SR': 'مكة', '4110.SR': 'باتك', '4130.SR': 'الباحة', '4140.SR': 'الصادرات', '4150.SR': 'التعمير', '4160.SR': 'ثمار', '4161.SR': 'بن داود', '4162.SR': 'المنجم', '4163.SR': 'الدواء', '4164.SR': 'أماك', '4165.SR': 'الماجد للعود', '4170.SR': 'شمس', '4180.SR': 'مجموعة فتيحي', '4190.SR': 'جرير', '4191.SR': 'أبو معطي', '4192.SR': 'عذيب', '4200.SR': 'الدريس', '4210.SR': 'الأبحاث والإعلام', '4220.SR': 'إعمار', '4230.SR': 'البحر الأحمر', '4240.SR': 'سينومي ريتيل', '4250.SR': 'جبل عمر', '4260.SR': 'بدجت', '4261.SR': 'ذيب', '4262.SR': 'لومي', '4280.SR': 'المملكة', '4290.SR': 'الخليج للتدريب', '4300.SR': 'دار الأركان', '4320.SR': 'الأندلس', '4321.SR': 'سينومي سنترز', '4322.SR': 'ريتال',
     '6004.SR': 'التموين', '6010.SR': 'نادك', '6012.SR': 'ريدان', '6013.SR': 'التطويرية الغذائية', '6014.SR': 'الآمار', '6015.SR': 'أمريكانا', '6020.SR': 'القصيم', '6040.SR': 'تبوك الزراعية', '6050.SR': 'الأسماك', '6060.SR': 'الشرقية للتنمية', '6070.SR': 'الجوف', '6090.SR': 'جازادكو',
     '7010.SR': 'STC', '7020.SR': 'موبايلي', '7030.SR': 'زين السعودية', '7040.SR': 'عذيب للاتصالات', '7200.SR': 'المعمر', '7202.SR': 'سلوشنز', '7203.SR': 'علم', '7204.SR': 'توبي',
-    '8010.SR': 'التعاونية', '8012.SR': 'الجزيرة تكافل', '8020.SR': 'ملاذ للتأمين', '8030.SR': 'ميدغلف', '8040.SR': 'أليانز إس إف', '8050.SR': 'سلامة', '8060.SR': 'ولاء', '8070.SR': 'الدرع العربي', '8100.SR': 'سايكو', '8120.SR': 'اتحاد الخليج', '8150.SR': 'أسيج', '8160.SR': 'التأمين العربية', '8200.SR': 'إعادة', '8210.SR': 'بوبا العربية', '8230.SR': 'تكافل الراجحي', '8240.SR': 'تشب', '8250.SR': 'عناية', '8260.SR': 'أمانة للتأمين', '8270.SR': 'بروج للتأمين', '8280.SR': 'العالمية'
+    '8010.SR': 'التعاونية', '8012.SR': 'الجزيرة تكافل', '8020.SR': 'ملاذ للتأمين', '8030.SR': 'ميدغلف', '8040.SR': 'أليانز', '8050.SR': 'سلامة', '8060.SR': 'ولاء', '8070.SR': 'الدرع العربي', '8100.SR': 'سايكو', '8120.SR': 'اتحاد الخليج', '8150.SR': 'أسيج', '8160.SR': 'التأمين العربية', '8200.SR': 'إعادة', '8210.SR': 'بوبا', '8230.SR': 'تكافل الراجحي', '8240.SR': 'تشب', '8250.SR': 'عناية', '8260.SR': 'أمانة للتأمين', '8270.SR': 'بروج', '8280.SR': 'العالمية'
 }
 
-def get_ar_name(ticker):
-    return SAUDI_NAMES.get(ticker, ticker.replace('.SR', ''))
+# 🇺🇸 القاموس الأمريكي الشامل (100 شركة وصندوق)
+US_NAMES = {
+    # Tech & Mega Caps
+    'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'NVIDIA', 'GOOGL': 'Alphabet', 'AMZN': 'Amazon', 'META': 'Meta', 'TSLA': 'Tesla', 'AMD': 'AMD', 'AVGO': 'Broadcom', 'TSM': 'TSMC', 'CRM': 'Salesforce', 'NFLX': 'Netflix', 'INTC': 'Intel', 'CSCO': 'Cisco', 'QCOM': 'Qualcomm',
+    # Growth, Cloud & Software
+    'PLTR': 'Palantir', 'SNOW': 'Snowflake', 'CRWD': 'CrowdStrike', 'DDOG': 'Datadog', 'NET': 'Cloudflare', 'NOW': 'ServiceNow', 'PANW': 'Palo Alto', 'SHOP': 'Shopify', 'SQ': 'Block', 'UBER': 'Uber', 'TEAM': 'Atlassian', 'MDB': 'MongoDB', 'ZS': 'Zscaler',
+    # Crypto & Blockchain
+    'COIN': 'Coinbase', 'MSTR': 'MicroStrategy', 'MARA': 'Marathon', 'RIOT': 'Riot Platforms', 'HOOD': 'Robinhood',
+    # Finance & Payments
+    'V': 'Visa', 'MA': 'Mastercard', 'JPM': 'JPMorgan', 'BAC': 'Bank of America', 'GS': 'Goldman Sachs', 'MS': 'Morgan Stanley', 'PYPL': 'PayPal', 'C': 'Citigroup', 'WFC': 'Wells Fargo',
+    # Consumer & Retail
+    'WMT': 'Walmart', 'HD': 'Home Depot', 'COST': 'Costco', 'SBUX': 'Starbucks', 'NKE': 'Nike', 'MCD': 'McDonalds', 'PG': 'Procter & Gamble', 'KO': 'Coca-Cola', 'PEP': 'PepsiCo',
+    # Healthcare
+    'LLY': 'Eli Lilly', 'UNH': 'UnitedHealth', 'JNJ': 'Johnson & Johnson', 'ABBV': 'AbbVie', 'MRK': 'Merck', 'PFE': 'Pfizer', 'ISRG': 'Intuitive Surg',
+    # Industrial, Energy & Telecom
+    'XOM': 'Exxon Mobil', 'CVX': 'Chevron', 'BA': 'Boeing', 'CAT': 'Caterpillar', 'GE': 'General Electric', 'DIS': 'Disney', 'VZ': 'Verizon', 'T': 'AT&T',
+    # ETFs (صناديق المؤشرات)
+    'SPY': 'S&P 500 ETF', 'QQQ': 'Nasdaq ETF', 'DIA': 'Dow Jones ETF', 'IWM': 'Russell 2000 ETF', 'ARKK': 'ARK Innovation', 'SMH': 'Semiconductor ETF', 'SOXX': 'iShares Semi ETF', 'XLF': 'Financial ETF', 'XLV': 'Health Care ETF', 'XLE': 'Energy ETF', 'TQQQ': 'ProShares Ultra QQQ'
+}
 
-US_WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'META', 'GOOGL', 'AMD', 'NFLX', 'PLTR', 'COIN', 'SPY', 'QQQ']
+def get_stock_name(ticker):
+    if ticker in SAUDI_NAMES: return SAUDI_NAMES[ticker]
+    if ticker in US_NAMES: return US_NAMES[ticker]
+    return ticker.replace('.SR', '')
 
 # ==========================================
 # 📊 2. محرك تقييم الزخم (M-Score)
@@ -112,7 +132,7 @@ def get_mom_badge(score):
 # 🧠 3. محرك ذكاء ماسة الهجين 
 # ==========================================
 def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d):
-    if pd.isna(ma50) or pd.isna(ma200): return 0, "Wait ⏳", "gray", ["بيانات غير كافية للتحليل."]
+    if pd.isna(ma50) or pd.isna(ma200): return 0, "انتظار ⏳", "gray", ["بيانات غير كافية للتحليل."]
     
     tech_score = 50
     reasons = []
@@ -171,7 +191,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     elif pd.notna(zr_high) and last_close >= zr_high * 0.97: tech_score -= 15; veto_max_79 = True; reasons.append("🧱 <b>تحذير زيرو:</b> السعر يصطدم بسقف القناة (مقاومة).")
 
     tech_score = int(max(0, min(100, tech_score)))
-
     final_score = int((tech_score * 0.4) + (mom_score * 0.6))
     reasons.insert(0, f"📊 <b>زخم السيولة التراكمي:</b> يمتلك السهم قوة اندفاع تقدر بـ <b>{mom_score}/100</b>.")
 
@@ -222,7 +241,7 @@ def scan_market(watchlist_list):
             df_s = yf.Ticker(tk).history(period="1y")
             if len(df_s) > 200:
                 c, h, l, vol = df_s['Close'], df_s['High'], df_s['Low'], df_s['Volume']
-                stock_name = get_ar_name(tk)
+                stock_name = get_stock_name(tk)
                 
                 ma50, ma200 = c.rolling(50).mean(), c.rolling(200).mean()
                 v_sma20, v_sma10 = vol.rolling(20).mean(), vol.rolling(10).mean()
@@ -334,16 +353,13 @@ def scan_market(watchlist_list):
 
                 ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d)
                 
-                ai_picks.append({"السهم": stock_name, "السعر": round(last_c, 2), "Score 💯": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "التوصية 🚦": ai_dec, "اللون": ai_col})
+                ai_picks.append({"الشركة": stock_name, "السعر": round(last_c, 2), "Score 💯": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "التوصية 🚦": ai_dec, "اللون": ai_col})
 
-        except Exception as e: 
-            # تجاوز الأخطاء الصامتة لكي لا ينهار الرادار أبداً
-            continue
-            
+        except Exception as e: continue
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
-# 🌟 5. واجهة المستخدم (البحث الذكي)
+# 🌟 5. واجهة المستخدم (البحث المزدوج)
 # ==========================================
 st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي | التوصيات المباشرة 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
@@ -353,28 +369,32 @@ market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["ا
 
 col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
 
+# 💡 القائمة المنسدلة الذكية الآمنة (تعمل للسوقين بدقة عالية)
 with col_search1: 
     if "السعودي" in market_choice:
-        # ترتيب القائمة أبجدياً لسهولة البحث!
-        saudi_options = sorted([f"{name} ({tk.replace('.SR', '')})" for tk, name in SAUDI_NAMES.items()])
-        default_index = saudi_options.index('الراجحي (1120)') if 'الراجحي (1120)' in saudi_options else 0
-        selected_option = st.selectbox("🎯 اختر السهم (ابحث بالاسم أو الرمز):", saudi_options, index=default_index, label_visibility="collapsed")
+        saudi_display_to_ticker = {f"{name} ({tk.replace('.SR', '')})": tk for tk, name in SAUDI_NAMES.items()}
+        options = sorted(list(saudi_display_to_ticker.keys()))
+        default_index = options.index('الراجحي (1120)') if 'الراجحي (1120)' in options else 0
+        selected_option = st.selectbox("🎯 اختر السهم (ابحث بالاسم أو الرمز):", options, index=default_index, label_visibility="collapsed")
         
-        selected_ticker_num = selected_option.split("(")[1].replace(")", "")
-        ticker = f"{selected_ticker_num}.SR"
+        ticker = saudi_display_to_ticker[selected_option]
         display_name = selected_option.split(" (")[0]
         selected_watchlist = list(SAUDI_NAMES.keys())
     else:
-        ticker = st.text_input("🎯 رمز السهم (مثال: NVDA, AAPL):", value="NVDA", label_visibility="collapsed")
-        ticker = ticker.upper().strip()
-        display_name = ticker
-        selected_watchlist = US_WATCHLIST
+        us_display_to_ticker = {f"{name} ({tk})": tk for tk, name in US_NAMES.items()}
+        options = sorted(list(us_display_to_ticker.keys()))
+        default_index = options.index('NVIDIA (NVDA)') if 'NVIDIA (NVDA)' in options else 0
+        selected_option = st.selectbox("🎯 اختر السهم الأمريكي (ابحث بالاسم أو الرمز):", options, index=default_index, label_visibility="collapsed")
+        
+        ticker = us_display_to_ticker[selected_option]
+        display_name = selected_option.split(" (")[0]
+        selected_watchlist = list(US_NAMES.keys())
 
 with col_search2: analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
 st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
-    with st.spinner(f"جاري مسح السوق لـ ({len(selected_watchlist)}) شركة وبناء التوصيات... ⏳ (قد يستغرق 30 ثانية لأول مرة فقط)"):
+    with st.spinner(f"جاري مسح السوق لـ ({len(selected_watchlist)}) شركة وبناء التوصيات لـ ({display_name})... ⏳ (تأخذ 20-30 ثانية لأول مرة)"):
         df = get_stock_data(ticker) 
         df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market(selected_watchlist)
         
@@ -552,7 +572,7 @@ if analyze_btn or ticker:
                         df_ai_disp = pd.DataFrame(df_ai_picks).sort_values(by="Score 💯", ascending=False)
                         html_ai = "<table class='ai-table' dir='rtl'><tr><th>الشركة</th><th>السعر</th><th>Score 💯</th><th>الزخم 🌊</th><th>الحالة اللحظية ⚡</th><th>الهدف 🎯</th><th>الوقف 🛡️</th><th>التوصية 🚦</th></tr>"
                         for _, row in df_ai_disp.iterrows():
-                            html_ai += f"<tr><td style='color:#00d2ff; font-weight:bold; font-size:15px;'>{row['السهم']}</td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:18px; font-weight:bold;'>{row['Score 💯']}/100</td><td>{row['الزخم 🌊']}</td><td>{row['الحالة اللحظية ⚡']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']};'><span class='rec-badge' style='background-color:{row['اللون']}20; border:1px solid {row['اللون']}50;'>{row['التوصية 🚦']}</span></td></tr>"
+                            html_ai += f"<tr><td style='color:#00d2ff; font-weight:bold; font-size:15px;'>{row['الشركة']}</td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:18px; font-weight:bold;'>{row['Score 💯']}/100</td><td>{row['الزخم 🌊']}</td><td>{row['الحالة اللحظية ⚡']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']};'><span class='rec-badge' style='background-color:{row['اللون']}20; border:1px solid {row['اللون']}50;'>{row['التوصية 🚦']}</span></td></tr>"
                         html_ai += "</table>"
                         st.markdown(html_ai, unsafe_allow_html=True)
                     else:
@@ -570,14 +590,14 @@ if analyze_btn or ticker:
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     if not df_up_recent.empty:
-                        html_up = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>منذ كم صف</th><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th><th style='background-color:#4CAF50; color:white;'>السهم</th></tr>"
+                        html_up = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>منذ كم صف</th><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th><th style='background-color:#4CAF50; color:white;'>الشركة</th></tr>"
                         for _, row in df_up_recent.iterrows(): html_up += f"<tr><td>{row['منذ كم صف']}</td><td>{row['تاريخ']}</td><td><span style='background-color: #1565c0; color: white; padding: 2px 8px; border-radius: 4px; font-weight:bold;'>{row['السهم']}</span></td></tr>"
                         html_up += "</table>"
                         st.markdown(html_up, unsafe_allow_html=True)
                     else: st.markdown(f"<table class='qafah-table' dir='rtl'><tr><th style='background-color:#4CAF50; color:white;'>تغير إلى صاعد</th></tr><tr><td class='empty-box'>لا توجد تغيرات صاعدة آخر {n_days} صفوف</td></tr></table>", unsafe_allow_html=True)
                     
                     if not df_dn_recent.empty:
-                        html_dn = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>منذ كم صف</th><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th><th style='background-color:#e53935; color:white;'>السهم</th></tr>"
+                        html_dn = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#e53935; color:white;'>منذ كم صف</th><th style='background-color:#e53935; color:white;'>تغير إلى هابط</th><th style='background-color:#e53935; color:white;'>الشركة</th></tr>"
                         for _, row in df_dn_recent.iterrows(): html_dn += f"<tr><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['منذ كم صف']}</td><td style='background-color:rgba(229, 57, 53, 0.1);'>{row['تاريخ']}</td><td style='color:#ef9a9a; font-weight:bold; background-color:rgba(229, 57, 53, 0.1);'>{row['السهم']}</td></tr>"
                         html_dn += "</table>"
                         st.markdown(html_dn, unsafe_allow_html=True)
@@ -586,7 +606,7 @@ if analyze_btn or ticker:
                     st.markdown("<hr style='border-color: #2d303e;'>", unsafe_allow_html=True)
                     st.markdown("<div class='scanner-header'>اختراق المقاومة (اليوم) 🚀</div>", unsafe_allow_html=True)
                     if not df_bup.empty:
-                        html_bup = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#2e7d32; color:white;'>النوع</th><th style='background-color:#2e7d32; color:white;'>السهم</th></tr>"
+                        html_bup = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#2e7d32; color:white;'>النوع</th><th style='background-color:#2e7d32; color:white;'>الشركة</th></tr>"
                         for _, row in df_bup.iterrows(): html_bup += f"<tr><td style='font-size:11px;'>{row['النوع']}</td><td style='color:#00d2ff; font-weight:bold;'>{row['السهم']}</td></tr>"
                         html_bup += "</table>"
                         st.markdown(html_bup, unsafe_allow_html=True)
@@ -594,7 +614,7 @@ if analyze_btn or ticker:
                         
                     st.markdown("<div class='scanner-header-red'>كسر الدعم (اليوم) 🩸</div>", unsafe_allow_html=True)
                     if not df_bdn.empty:
-                        html_bdn = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#c62828; color:white;'>النوع</th><th style='background-color:#c62828; color:white;'>السهم</th></tr>"
+                        html_bdn = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#c62828; color:white;'>النوع</th><th style='background-color:#c62828; color:white;'>الشركة</th></tr>"
                         for _, row in df_bdn.iterrows(): html_bdn += f"<tr><td style='font-size:11px;'>{row['النوع']}</td><td style='color:#ef9a9a; font-weight:bold;'>{row['السهم']}</td></tr>"
                         html_bdn += "</table>"
                         st.markdown(html_bdn, unsafe_allow_html=True)
@@ -660,7 +680,11 @@ if analyze_btn or ticker:
             with tab2:
                 tv_ticker = ticker.replace('.SR', '') if ticker.endswith('.SR') else ticker
                 tv_symbol = f"TADAWUL:{tv_ticker}" if ticker.endswith('.SR') else tv_ticker
-                tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "D","timezone": "Asia/Riyadh","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""
+                
+                # 💡 ضبط التوقيت تلقائياً (الرياض للسعودي / نيويورك للأمريكي)
+                tz = "Asia/Riyadh" if ticker.endswith('.SR') else "America/New_York"
+                
+                tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "D","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 
             with tab3:
@@ -681,6 +705,7 @@ if analyze_btn or ticker:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             with tab4:
+                df['Load_Diff_3D'] = df['3d_%'].apply(lambda x: format_cat(x, get_cat(x))) 
                 table = pd.DataFrame({'التاريخ': df.index.strftime('%Y-%m-%d'),'الإغلاق': df['Close'].round(2),'عداد الاتجاه': df['Counter'].astype(int),'MA 50': df['SMA_50'].round(2),'MA 200': df['SMA_200'].round(2),'تغير 1 يوم': df['Load_Diff_1D'],'تراكمي 3 أيام': df['Load_Diff_3D'],'تراكمي 5 أيام': df['Load_Diff_5D'],'تراكمي 10 أيام': df['Load_Diff_10D'],'حجم السيولة': df['Volume']})
                 display_table = table.tail(15).iloc[::-1].copy()
                 display_table['حجم السيولة'] = display_table['حجم السيولة'].apply(lambda x: f"{x:,}")

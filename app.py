@@ -48,7 +48,7 @@ div.stRadio > div[role="radiogroup"] { justify-content: center; margin-bottom: 1
 .ai-table { width: 100%; text-align: center; border-collapse: collapse; margin-top: 10px; background-color: #1e2129; border-radius: 8px; overflow: hidden;}
 .ai-table th { background-color: #2d303e; color: white; padding: 10px; font-size: 13px;}
 .ai-table td { padding: 10px; border-bottom: 1px solid #2d303e; font-size: 13px;}
-.bo-badge { color: black; font-weight: bold; padding: 4px 8px; border-radius: 12px; font-size: 12px; display: inline-block;}
+.bo-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 12px; display: inline-block; white-space: nowrap;}
 .target-text { color: #00E676; font-weight: bold; font-size: 14px; }
 .sl-text { color: #FF5252; font-weight: bold; font-size: 14px; }
 </style>
@@ -56,7 +56,7 @@ div.stRadio > div[role="radiogroup"] { justify-content: center; margin-bottom: 1
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # ==========================================
-# ⚡ 2. محركات ذكاء ماسة (AI Engine)
+# ⚡ 2. محركات ذكاء ماسة المتطورة (V20 - الإصلاح المنطقي)
 # ==========================================
 def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, event_text, bo_score_add):
     if pd.isna(ma50) or pd.isna(ma200): return 0, "جاري الحساب ⏳", "gray", ["بيانات غير كافية."]
@@ -64,30 +64,35 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     score = 50
     reasons = []
     
+    # 1. الحدث اللحظي
     if event_text != "استقرار ➖":
         score += bo_score_add
-        if "🚀" in event_text or "🟢" in event_text or "💎" in event_text:
-            reasons.append(f"⚡ <b>الحدث اللحظي:</b> إشارة إيجابية واضحة الآن ({event_text}).")
-        elif "🩸" in event_text or "🔴" in event_text or "🛑" in event_text:
-            reasons.append(f"⚠️ <b>الحدث اللحظي:</b> إشارة سلبية خطيرة الآن ({event_text}).")
-        elif "⚠️" in event_text:
-            reasons.append(f"⚠️ <b>الحدث اللحظي:</b> اختراق وهمي بسيولة ضعيفة، يجب الحذر.")
+        if bo_score_add > 0:
+            reasons.append(f"⚡ <b>الحدث اللحظي:</b> إشارة إيجابية تدعم السهم الآن ({event_text}).")
+        else:
+            reasons.append(f"⚠️ <b>الحدث اللحظي:</b> إشارة سلبية أو تحذيرية ({event_text}). تم خصم نقاط لتقليل المخاطرة.")
 
+    # 2. الاتجاه العام
     if last_close > ma200:
         score += 15
         reasons.append("✅ <b>الاتجاه العام (MA 200):</b> مسار صاعد آمن استثمارياً.")
     else:
         score -= 20
-        reasons.append("❌ <b>الاتجاه العام (MA 200):</b> كسر لمتوسط 200 (مسار هابط).")
+        reasons.append("❌ <b>الاتجاه العام (MA 200):</b> كسر لمتوسط 200 (مسار هابط سلبي).")
         
+    # 3. دعم المضارب (الإصلاح الجذري للسكين الساقطة 🔪)
     if last_close > ma50:
         dist = ((last_close - ma50) / ma50) * 100
-        if dist < 3:
-            score += 20
-            reasons.append("💎 <b>دعم المضارب:</b> ارتداد من MA 50 (فرصة صيد ذهبية).")
+        if dist <= 3.5:
+            if counter > 0:
+                score += 20
+                reasons.append("💎 <b>دعم المضارب:</b> ارتداد إيجابي صريح من MA 50 (فرصة صيد ذهبية).")
+            else:
+                score += 5 # تخفيض النقاط إذا كان السهم ينزف
+                reasons.append("⏳ <b>دعم المضارب:</b> السعر يتراجع ويقترب من دعم MA 50. انتظر شمعة الارتداد ولا تستعجل.")
         elif dist > 8:
             score -= 10
-            reasons.append(f"⚠️ <b>التضخم:</b> السعر ابتعد عن الدعم بنسبة {dist:.1f}% (يُفضل جني الأرباح).")
+            reasons.append(f"⚠️ <b>التضخم:</b> السعر ابتعد عن الدعم بنسبة {dist:.1f}% (يُفضل الحذر).")
         else:
             score += 10
             reasons.append("✅ <b>زخم المضاربة:</b> ثبات ممتاز فوق MA 50.")
@@ -95,43 +100,36 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
         score -= 15
         reasons.append("🔴 <b>زخم المضاربة:</b> كسر لمتوسط 50 (مرحلة ضعف أو تصحيح).")
 
+    # 4. العداد
     if counter > 0:
-        if counter <= 3:
-            score += 15
-            reasons.append(f"🚀 <b>العداد ({counter}):</b> موجة صاعدة في بدايتها.")
-        elif counter >= 6:
-            score -= 10
-            reasons.append(f"⚠️ <b>العداد ({counter}):</b> صعود متتالي طويل (احتمال تصحيح).")
-        else:
-            score += 5
-            reasons.append(f"📈 <b>العداد ({counter}):</b> منتصف موجة صاعدة.")
+        if counter <= 3: score += 15; reasons.append(f"🚀 <b>العداد ({counter}):</b> موجة صاعدة في بدايتها.")
+        elif counter >= 6: score -= 10; reasons.append(f"⚠️ <b>العداد ({counter}):</b> صعود متتالي طويل (احتمال تصحيح).")
+        else: score += 5; reasons.append(f"📈 <b>العداد ({counter}):</b> منتصف موجة صاعدة.")
     elif counter < 0:
-        if counter >= -3:
-            score -= 5
-            reasons.append(f"🔻 <b>العداد ({counter}):</b> بداية تصحيح هابط.")
-        else:
-            score -= 15
-            reasons.append(f"🩸 <b>العداد ({counter}):</b> نزيف مستمر، لا تشتري.")
+        if counter >= -3: score -= 5; reasons.append(f"🔻 <b>العداد ({counter}):</b> تصحيح هابط مستمر.")
+        else: score -= 15; reasons.append(f"🩸 <b>العداد ({counter}):</b> نزيف مستمر، لا تشتري.")
 
-    if 40 <= rsi <= 65:
-        score += 10
-        reasons.append(f"✅ <b>RSI ({rsi:.1f}):</b> مؤشر صحي ولديه مساحة للصعود.")
-    elif rsi > 70:
-        score -= 15
-        reasons.append(f"🚨 <b>RSI ({rsi:.1f}):</b> تشبع شرائي وتضخم.")
-    elif rsi < 30:
-        score += 15
-        reasons.append(f"🛒 <b>RSI ({rsi:.1f}):</b> تشبع بيعي وفرصة ارتداد.")
+    # 5. RSI
+    if 40 <= rsi <= 65: score += 10; reasons.append(f"✅ <b>RSI ({rsi:.1f}):</b> مؤشر صحي ولديه مساحة للصعود.")
+    elif rsi > 70: score -= 15; reasons.append(f"🚨 <b>RSI ({rsi:.1f}):</b> تشبع شرائي وتضخم.")
+    elif rsi < 30: score += 15; reasons.append(f"🛒 <b>RSI ({rsi:.1f}):</b> تشبع بيعي وفرصة ارتداد.")
 
-    if pd.notna(zr_low) and last_close <= zr_low * 1.05: score += 15; reasons.append("🎯 <b>زيرو انعكاس:</b> السعر يختبر قاع القناة (منطقة ارتداد مؤسساتية).")
-    elif pd.notna(zr_high) and last_close >= zr_high * 0.97: score -= 15; reasons.append("🧱 <b>زيرو انعكاس:</b> السعر يصطدم بسقف القناة (مقاومة تاريخية شرسة).")
+    # 6. زيرو انعكاس
+    if pd.notna(zr_low) and last_close <= zr_low * 1.05: score += 15; reasons.append("🎯 <b>زيرو انعكاس:</b> السعر يختبر قاع القناة (منطقة ارتداد).")
+    elif pd.notna(zr_high) and last_close >= zr_high * 0.97: score -= 15; reasons.append("🧱 <b>زيرو انعكاس:</b> السعر يصطدم بسقف القناة (مقاومة).")
 
     score = int(max(0, min(100, score)))
     
-    if score >= 85 and ("🚀" in event_text or "🟢" in event_text or "💎" in event_text): return score, "فرصة ماسية 💎🚀", "#FFD700", reasons
-    elif score >= 70: return score, "شراء / تجميع 🟢", "#00E676", reasons
-    elif 45 <= score < 70: return score, "مراقبة 🟡", "#FFB300", reasons
-    else: return score, "سلبية / خروج 🔴", "#FF5252", reasons
+    # 🛑 صمام الأمان الإلزامي (Safety Cap) لمنع التناقض
+    if (counter < 0 or "كسر" in event_text or "سلبي" in event_text or "تصحيح" in event_text) and score >= 70:
+        score = 65 
+        reasons.insert(0, "🛡️ <b>فلتر الأمان الآلي:</b> تم إجبار التقييم على النزول لـ (مراقبة) لأن السهم يمر بضغط بيعي لحظي. المحترف لا يلتقط السكين الساقطة!")
+
+    if score >= 80 and bo_score_add > 0: return score, "فرصة ماسية 💎🚀", "#FFD700", reasons
+    elif score >= 70: return score, "شراء / تجميع 🟢📈", "#00E676", reasons
+    elif 45 <= score < 70: return score, "مراقبة / انتظر التأكيد 🟡⏳", "#FFB300", reasons
+    elif 30 <= score < 45: return score, "سلبية / لا تشتري 🔴🔻", "#FF5252", reasons
+    else: return score, "خروج / انهيار ⛔🩸", "#D32F2F", reasons
 
 # ==========================================
 # ⚡ 3. قوائم الأسواق والمسح الآلي
@@ -201,14 +199,12 @@ def scan_market(watchlist_list):
 
                 loads_list.append({"holding ticker": sym,"date Latest Date": df_s.index[-1].strftime("%Y-%m-%d"),"daily direction counter": int(cur_count),"hitting_days": abs(cur_count),"load diff 1d %": pct_1d,"1d_cat": get_cat(pct_1d),"Top G/L 3Days": "✅" if pct_3d > 0 else "❌","load diff 3d %": pct_3d,"3d_cat": get_cat(pct_3d),"Top G/L 5Days": "✅" if pct_5d > 0 else "❌","load diff 5d %": pct_5d,"5d_cat": get_cat(pct_5d),"Top G/L 10days": "✅" if pct_10d > 0 else "❌","load diff 10d %": pct_10d,"10d_cat": get_cat(pct_10d)})
 
-                # 🚀 حساب الاختراقات الشاملة لتظهر في (رادار الاختراقات اللحظي)
                 bo_msgs_sys = []
                 if last_c > h3.iloc[-1] and prev_c <= h3.iloc[-2]: 
                     bo_msgs_sys.append("3أيام")
                     alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "اختراق 3 أيام صاعد 🟢"})
                 if last_c > h4.iloc[-1] and prev_c <= h4.iloc[-2]: bo_msgs_sys.append("4أيام")
                 if last_c > h10.iloc[-1] and prev_c <= h10.iloc[-2]: bo_msgs_sys.append("10أيام")
-                
                 if bo_msgs_sys: breakouts.append({"السهم": sym, "التاريخ": today_str, "النوع": "+".join(bo_msgs_sys)})
 
                 bd_msgs_sys = []
@@ -217,46 +213,55 @@ def scan_market(watchlist_list):
                     alerts_list.append({"ticker": sym, "frame": "يومي", "datetime": now_time, "filter": "كسر 3 أيام هابط 🔴"})
                 if last_c < l4.iloc[-1] and prev_c >= l4.iloc[-2]: bd_msgs_sys.append("4أيام")
                 if last_c < l10.iloc[-1] and prev_c >= l10.iloc[-2]: bd_msgs_sys.append("10أيام")
-                
                 if bd_msgs_sys: breakdowns.append({"السهم": sym, "التاريخ": today_str, "النوع": "+".join(bd_msgs_sys)})
 
-                # 🧠 محرك الذكاء الاصطناعي للجدول (الحدث اللحظي المتطور)
+                # 🧠 تطوير الحالة اللحظية (Live Status) وإصلاح العقوبات
                 events = []
                 vol_ratio = last_vol / avg_vol if avg_vol > 0 else 1
                 
                 if bo_msgs_sys: 
-                    events.append("اختراق 🚀" if vol_ratio >= 1.2 else "اختراق وهمي ⚠️")
+                    events.append("اختراق مقاومة 🚀" if vol_ratio >= 1.2 else "اختراق وهمي ⚠️")
                 elif prev_c > h3.iloc[-2] and prev2_c <= h3.iloc[-3] and last_c > h3.iloc[-1]:
                     events.append("اختراق(أمس) 🚀")
 
                 if bd_msgs_sys: 
-                    events.append("كسر 🩸" if vol_ratio >= 1.2 else "كسر وهمي 🛑")
+                    events.append("كسر دعم 🩸" if vol_ratio >= 1.2 else "كسر وهمي 🛑")
                 elif prev_c < l3.iloc[-2] and prev2_c >= l3.iloc[-3] and last_c < l3.iloc[-1]:
                     events.append("كسر(أمس) 🩸")
                 
-                if cur_count == 1: events.append("ارتداد 🟢")
-                elif cur_count == -1: events.append("تصحيح 🔴")
+                if cur_count == 1 and not bo_msgs_sys: events.append("انعكاس إيجابي 🟢")
+                elif cur_count == -1 and not bd_msgs_sys: events.append("انعكاس سلبي 🔴")
+                
+                dist_ma50 = ((last_c - ma50.iloc[-1])/ma50.iloc[-1]) * 100 if pd.notna(ma50.iloc[-1]) else 100
+                if 0 <= dist_ma50 <= 2 and cur_count > 0 and "انعكاس إيجابي 🟢" not in events:
+                    events.append("ارتداد من MA50 💎")
+                elif -2 <= dist_ma50 < 0 and cur_count < 0 and "انعكاس سلبي 🔴" not in events:
+                    events.append("كسر MA50 ⚠️")
 
-                if not events and pd.notna(ma50.iloc[-1]):
-                    dist_ma50 = ((last_c - ma50.iloc[-1])/ma50.iloc[-1]) * 100
-                    if 0 <= dist_ma50 <= 1.5 and prev_c > ma50.iloc[-2]:
-                        events.append("دعم MA50 💎")
-                    elif -1.5 <= dist_ma50 < 0 and prev_c > ma50.iloc[-2]:
-                        events.append("كسر MA50 ⚠️")
+                if not events:
+                    if cur_count > 1: events.append(f"صاعد ({cur_count} أيام) 📈")
+                    elif cur_count < -1: events.append(f"هابط ({abs(cur_count)} أيام) 📉")
+                    else: events.append("استقرار ➖")
 
-                event_text = " + ".join(events) if events else "استقرار ➖"
+                event_text = " | ".join(events)
                 
                 bo_score_add = 0
-                if "اختراق 🚀" in event_text or "اختراق(أمس)" in event_text: bo_score_add = 15
-                elif "كسر 🩸" in event_text or "كسر(أمس)" in event_text: bo_score_add = -15
-                elif "ارتداد" in event_text: bo_score_add = 10
-                elif "تصحيح" in event_text: bo_score_add = -10
+                if "اختراق مقاومة 🚀" in event_text or "اختراق(أمس) 🚀" in event_text: bo_score_add = 15
+                elif "انعكاس إيجابي 🟢" in event_text: bo_score_add = 10
+                elif "ارتداد من MA50 💎" in event_text: bo_score_add = 10
+                elif "اختراق وهمي ⚠️" in event_text: bo_score_add = -5
+                elif "كسر دعم 🩸" in event_text or "كسر(أمس) 🩸" in event_text: bo_score_add = -20
+                elif "كسر وهمي 🛑" in event_text: bo_score_add = -10
+                elif "انعكاس سلبي 🔴" in event_text: bo_score_add = -10
+                elif "كسر MA50 ⚠️" in event_text: bo_score_add = -15
 
-                bg_color = "transparent"
-                text_color = "gray"
-                if "🚀" in event_text or "🟢" in event_text or "💎" in event_text: bg_color, text_color = "#00E676", "black"
-                elif "🩸" in event_text or "🔴" in event_text or "🛑" in event_text: bg_color, text_color = "#FF5252", "white"
-                elif "⚠️" in event_text: bg_color, text_color = "#FFD700", "black"
+                bg_color, text_color, border_color = "transparent", "gray", "gray"
+                if any(x in event_text for x in ["🚀", "🟢", "💎", "📈"]): 
+                    bg_color, text_color, border_color = "rgba(0, 230, 118, 0.1)", "#00E676", "rgba(0, 230, 118, 0.5)"
+                elif any(x in event_text for x in ["🩸", "🔴", "🛑", "📉", "⚠️"]): 
+                    bg_color, text_color, border_color = "rgba(255, 82, 82, 0.1)", "#FF5252", "rgba(255, 82, 82, 0.5)"
+                elif "⚠️" in event_text:
+                    bg_color, text_color, border_color = "rgba(255, 215, 0, 0.1)", "#FFD700", "rgba(255, 215, 0, 0.5)"
 
                 target = zr_h.iloc[-1] if pd.notna(zr_h.iloc[-1]) else last_c * 1.05
                 sl = ma50.iloc[-1] if pd.notna(ma50.iloc[-1]) else last_c * 0.95
@@ -264,13 +269,13 @@ def scan_market(watchlist_list):
 
                 ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add)
                 
-                event_badge = f"<span class='bo-badge' style='background-color:{bg_color}; color:{text_color}; border: 1px solid {bg_color if bg_color != 'transparent' else '#555'};'>{event_text}</span>"
+                event_badge = f"<span class='bo-badge' style='background-color:{bg_color}; color:{text_color}; border: 1px solid {border_color};'>{event_text}</span>"
                 
                 ai_picks.append({
                     "السهم": sym, 
                     "السعر": round(last_c, 2), 
                     "التقييم": ai_score, 
-                    "الحدث اللحظي ⚡": event_badge, 
+                    "الحالة اللحظية ⚡": event_badge, 
                     "الهدف 🎯": f"{target:.2f}",
                     "الوقف 🛡️": f"{sl:.2f}",
                     "القرار الخوارزمي": ai_dec, 
@@ -285,7 +290,7 @@ st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margi
 
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
-default_ticker = "NVDA" if "الأمريكي" in market_choice else "4030.SR"
+default_ticker = "NVDA" if "الأمريكي" in market_choice else "1120.SR"
 
 col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
 with col_search1: ticker = st.text_input(f"🎯 رمز السهم:", value=default_ticker, label_visibility="collapsed")
@@ -369,32 +374,41 @@ if analyze_btn or ticker:
             main_vol_ratio = last_vol / avg_vol if avg_vol > 0 else 1
             
             if main_bo_msgs_sys: 
-                main_events.append("اختراق 🚀" if main_vol_ratio >= 1.2 else "اختراق وهمي ⚠️")
+                main_events.append("اختراق مقاومة 🚀" if main_vol_ratio >= 1.2 else "اختراق وهمي ⚠️")
             elif prev_close > df['High_3D'].iloc[-2] and prev2_close <= df['High_3D'].iloc[-3] and last_close > df['High_3D'].iloc[-1]:
                 main_events.append("اختراق(أمس) 🚀")
 
             if main_bd_msgs_sys: 
-                main_events.append("كسر 🩸" if main_vol_ratio >= 1.2 else "كسر وهمي 🛑")
+                main_events.append("كسر دعم 🩸" if main_vol_ratio >= 1.2 else "كسر وهمي 🛑")
             elif prev_close < df['Low_3D'].iloc[-2] and prev2_close >= df['Low_3D'].iloc[-3] and last_close < df['Low_3D'].iloc[-1]:
                 main_events.append("كسر(أمس) 🩸")
 
-            if last_counter == 1: main_events.append("ارتداد 🟢")
-            elif last_counter == -1: main_events.append("تصحيح 🔴")
+            if last_counter == 1 and not main_bo_msgs_sys: main_events.append("انعكاس إيجابي 🟢")
+            elif last_counter == -1 and not main_bd_msgs_sys: main_events.append("انعكاس سلبي 🔴")
 
-            if not main_events and pd.notna(last_sma50):
+            if pd.notna(last_sma50):
                 main_dist_ma50 = ((last_close - last_sma50)/last_sma50) * 100
-                if 0 <= main_dist_ma50 <= 1.5 and prev_close > df['SMA_50'].iloc[-2]:
-                    main_events.append("دعم MA50 💎")
-                elif -1.5 <= main_dist_ma50 < 0 and prev_close > df['SMA_50'].iloc[-2]:
+                if 0 <= main_dist_ma50 <= 2 and last_counter > 0 and "انعكاس إيجابي 🟢" not in main_events:
+                    main_events.append("ارتداد من MA50 💎")
+                elif -2 <= main_dist_ma50 < 0 and last_counter < 0 and "انعكاس سلبي 🔴" not in main_events:
                     main_events.append("كسر MA50 ⚠️")
 
-            main_event_text = " + ".join(main_events) if main_events else "استقرار ➖"
+            if not main_events:
+                if last_counter > 1: main_events.append(f"صاعد ({last_counter} أيام) 📈")
+                elif last_counter < -1: main_events.append(f"هابط ({abs(last_counter)} أيام) 📉")
+                else: main_events.append("استقرار ➖")
+
+            main_event_text = " | ".join(main_events)
             
             main_bo_score_add = 0
-            if "اختراق 🚀" in main_event_text or "اختراق(أمس)" in main_event_text: main_bo_score_add = 15
-            elif "كسر 🩸" in main_event_text or "كسر(أمس)" in main_event_text: main_bo_score_add = -15
-            elif "ارتداد" in main_event_text: main_bo_score_add = 10
-            elif "تصحيح" in main_event_text: main_bo_score_add = -10
+            if "اختراق مقاومة 🚀" in main_event_text or "اختراق(أمس) 🚀" in main_event_text: main_bo_score_add = 15
+            elif "انعكاس إيجابي 🟢" in main_event_text: main_bo_score_add = 10
+            elif "ارتداد من MA50 💎" in main_event_text: main_bo_score_add = 10
+            elif "اختراق وهمي ⚠️" in main_event_text: main_bo_score_add = -5
+            elif "كسر دعم 🩸" in main_event_text or "كسر(أمس) 🩸" in main_event_text: main_bo_score_add = -20
+            elif "كسر وهمي 🛑" in main_event_text: main_bo_score_add = -10
+            elif "انعكاس سلبي 🔴" in main_event_text: main_bo_score_add = -10
+            elif "كسر MA50 ⚠️" in main_event_text: main_bo_score_add = -15
 
             if pd.notna(last_sma200) and pd.notna(last_sma50):
                 if last_close > last_sma200 and last_close > last_sma50: trend, trend_color = "مسار صاعد 🚀", "🟢"
@@ -430,9 +444,6 @@ if analyze_btn or ticker:
             m4.metric(f"قراءة زيرو {zr_color}", zr_status)
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # ==========================================
-            # 🧠 التبويب الأول: لوحة القيادة المركزية (AI + Live Reports)
-            # ==========================================
             tab_ai, tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
                 "🧠 لوحة القيادة (ذكاء ماسة + التقارير) 👑",
                 "🎯 شارت الاختراقات", 
@@ -469,13 +480,12 @@ if analyze_btn or ticker:
                     st.markdown("#### 🎯 خطة التداول الآلي (لجميع أسهم القائمة):")
                     if not df_ai_picks.empty:
                         df_ai_disp = pd.DataFrame(df_ai_picks).sort_values(by="التقييم", ascending=False)
-                        html_ai = "<table class='ai-table' dir='rtl'><tr><th>السهم</th><th>السعر</th><th>التقييم</th><th>الحدث اللحظي ⚡</th><th>الهدف 🎯</th><th>الوقف 🛡️</th><th>القرار الخوارزمي</th></tr>"
+                        html_ai = "<table class='ai-table' dir='rtl'><tr><th>السهم</th><th>السعر</th><th>التقييم</th><th>الحالة اللحظية ⚡</th><th>الهدف 🎯</th><th>الوقف 🛡️</th><th>القرار الخوارزمي</th></tr>"
                         for _, row in df_ai_disp.iterrows():
-                            html_ai += f"<tr><td><b>{row['السهم']}</b></td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:16px; font-weight:bold;'>{row['التقييم']}</td><td>{row['الحدث اللحظي ⚡']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']}; font-weight:bold;'>{row['القرار الخوارزمي']}</td></tr>"
+                            html_ai += f"<tr><td><b>{row['السهم']}</b></td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:16px; font-weight:bold;'>{row['التقييم']}</td><td>{row['الحالة اللحظية ⚡']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']}; font-weight:bold;'>{row['القرار الخوارزمي']}</td></tr>"
                         html_ai += "</table>"
                         st.markdown(html_ai, unsafe_allow_html=True)
 
-                # ⚡ التقارير الحية نُقلت هنا للشاشة الرئيسية!
                 with col_ai_reports:
                     st.markdown("<div class='scanner-header-gray'>التغييرات الأخيرة في الاتجاه</div>", unsafe_allow_html=True)
                     c_txt1, c_inp, c_txt2 = st.columns([2.5, 1, 0.5])
@@ -505,7 +515,6 @@ if analyze_btn or ticker:
 
                     st.markdown("<hr style='border-color: #2d303e;'>", unsafe_allow_html=True)
                     
-                    # 🚀 جداول الاختراقات والكسور (عادت للشاشة الرئيسية بميزة النوع)
                     st.markdown("<div class='scanner-header'>اختراق المقاومة (اليوم) 🚀</div>", unsafe_allow_html=True)
                     if not df_bup.empty:
                         html_bup = "<table class='qafah-table' dir='rtl'><tr><th style='background-color:#2e7d32; color:white;'>النوع</th><th style='background-color:#2e7d32; color:white;'>السهم</th></tr>"

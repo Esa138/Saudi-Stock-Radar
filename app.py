@@ -17,7 +17,7 @@ st.set_page_config(page_title="منصة ماسة 💎 | Masa Quant", layout="wid
 
 custom_css = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
 html, body, [class*="css"] { font-family: 'Tajawal', sans-serif !important; }
 #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
 div[data-testid="metric-container"] { background-color: #1a1c24; border: 1px solid #2d303e; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); transition: all 0.3s ease; }
@@ -38,20 +38,23 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .filter-btn-active { background-color: #4caf50; color: white; border: 1px solid #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; margin: 3px; }
 div.stRadio > div[role="radiogroup"] { justify-content: center; margin-bottom: 15px; }
 
-/* 🧠 تصميم صندوق ذكاء ماسة (AI) */
+/* 🧠 تصميم صندوق ذكاء ماسة (AI) المطور */
 .empty-box { text-align:center; padding:15px; background-color:#1e2129; border-radius:8px; color:#888; margin-bottom:15px; font-size:15px; border: 1px dashed #2d303e;}
 .ai-box { background: linear-gradient(145deg, #12141a, #1a1c24); border-top: 4px solid #00d2ff; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,210,255,0.15);}
 .ai-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d303e; padding-bottom: 15px; margin-bottom: 15px;}
 .ai-title { color: #00d2ff; font-weight: bold; font-size: 22px; margin: 0;}
-.ai-score-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: white; border: 4px solid; background-color: rgba(0,0,0,0.2); box-shadow: 0 0 15px currentColor;}
-.ai-decision-text { font-size: 26px; font-weight: bold; margin-bottom: 20px; text-align: center; background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px;}
-.ai-reason-item { font-size: 14px; color: #e0e0e0; margin-bottom: 10px; line-height: 1.6; padding-right: 15px; border-right: 3px solid #2d303e;}
+.ai-score-circle { width: 90px; height: 90px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; border: 4px solid; background-color: rgba(0,0,0,0.3); box-shadow: 0 0 15px currentColor;}
+.ai-score-num { font-size: 32px; font-weight: 900; line-height: 1; margin-top: 5px;}
+.ai-score-max { font-size: 14px; font-weight: 400; opacity: 0.7; margin-bottom: 5px;}
+.ai-decision-text { font-size: 32px; font-weight: 900; margin-bottom: 20px; text-align: center; background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; border: 2px solid; letter-spacing: 1px;}
+.ai-reason-item { font-size: 15px; color: #e0e0e0; margin-bottom: 10px; line-height: 1.6; padding-right: 15px; border-right: 3px solid #2d303e;}
 .ai-table { width: 100%; text-align: center; border-collapse: collapse; margin-top: 10px; background-color: #1e2129; border-radius: 8px; overflow: hidden;}
-.ai-table th { background-color: #2d303e; color: white; padding: 10px; font-size: 13px;}
-.ai-table td { padding: 10px; border-bottom: 1px solid #2d303e; font-size: 13px; vertical-align: middle;}
+.ai-table th { background-color: #2d303e; color: white; padding: 12px; font-size: 14px;}
+.ai-table td { padding: 12px; border-bottom: 1px solid #2d303e; font-size: 14px; vertical-align: middle;}
 .bo-badge { font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 12px; display: inline-block; white-space: nowrap; margin: 2px;}
 .target-text { color: #00E676; font-weight: bold; font-size: 14px; }
 .sl-text { color: #FF5252; font-weight: bold; font-size: 14px; }
+.rec-badge { font-weight:900; font-size:14px; padding:6px 12px; border-radius:8px;}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -80,7 +83,7 @@ def calc_momentum_score(pct_1d, pct_5d, pct_10d, vol_ratio):
     elif pct_1d > 0: svol = 20 if vol_ratio > 1.0 else 16
     else: svol = 6 if vol_ratio <= 1.0 else 0
         
-    return min(100, s5 + s10 + s1 + svol)
+    return min(100, max(0, s5 + s10 + s1 + svol))
 
 def get_mom_badge(score):
     if score >= 75: return f"<span style='background-color:rgba(0,230,118,0.2); color:#00E676; padding: 4px 8px; border-radius:6px; border:1px solid #00E676; font-weight:bold;'>{score} 🔥</span>"
@@ -88,10 +91,10 @@ def get_mom_badge(score):
     else: return f"<span style='background-color:rgba(255,82,82,0.2); color:#FF5252; padding: 4px 8px; border-radius:6px; border:1px solid #FF5252; font-weight:bold;'>{score} ❄️</span>"
 
 # ==========================================
-# 🧠 3. محرك ذكاء ماسة الهجين (V28 - إصلاح التعافي وتسارع السيولة)
+# 🧠 3. محرك ذكاء ماسة الهجين (V30 - 3 Tiers Output)
 # ==========================================
 def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d):
-    if pd.isna(ma50) or pd.isna(ma200): return 0, "جاري الحساب ⏳", "gray", ["بيانات غير كافية للتحليل."]
+    if pd.isna(ma50) or pd.isna(ma200): return 0, "Wait ⏳", "gray", ["بيانات غير كافية للتحليل."]
     
     tech_score = 50
     reasons = []
@@ -102,57 +105,52 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     dist_ma50 = ((last_close - ma50) / ma50) * 100 if is_micro_bull else ((ma50 - last_close) / ma50) * 100
     dist_ma200 = ((ma200 - last_close) / ma200) * 100 if not is_macro_bull else 0
     
-    veto_max_45 = False 
-    veto_max_69 = False 
+    veto_max_59 = False 
+    veto_max_79 = False 
     golden_watch = False
 
-    # --- 1. الاتجاه العام (استثناء مرحلة التعافي) ---
     if is_macro_bull: 
         tech_score += 15; reasons.append("✅ <b>الاتجاه العام:</b> السهم يتداول في أمان استثماري (فوق MA 200).")
     else: 
-        # 🚀 إصلاح الفلتر: التعرف على مرحلة التعافي
         if is_micro_bull and mom_score >= 70 and not is_bleeding:
             golden_watch = True
             tech_score += 5
             reasons.append(f"👀 <b>مرحلة تعافي:</b> السهم تحت MA200 لكنه يظهر زخماً قوياً للارتداد ويبعد عنها {dist_ma200:.1f}%.")
         else:
-            tech_score -= 25; veto_max_45 = True
+            tech_score -= 25; veto_max_59 = True
             reasons.append("❌ <b>الاتجاه العام:</b> السهم ينهار تحت متوسط 200 (مسار هابط).")
 
-    # --- 2. تسارع السيولة (Liquidity Acceleration 🌊) ---
     if vol_accel_ratio >= 1.2 and pct_1d > 0 and not is_bleeding:
         tech_score += 15
         reasons.append(f"🌊 <b>تسارع السيولة:</b> فوليوم اليوم أعلى من متوسط 10 أيام بـ {int((vol_accel_ratio-1)*100)}% (دخول سيولة مؤسساتية).")
-        if veto_max_45 and mom_score >= 60:
-            veto_max_45 = False; veto_max_69 = True
+        if veto_max_59 and mom_score >= 60:
+            veto_max_59 = False; veto_max_79 = True
             reasons.append("💡 <b>استثناء الخوارزمية:</b> تسارع السيولة ألغى فيتو الانهيار مؤقتاً.")
     elif vol_accel_ratio < 0.7:
         tech_score -= 5
         reasons.append("❄️ <b>جفاف السيولة:</b> التداولات ضعيفة جداً (أقل من المتوسط).")
 
-    # --- 3. دعم المضارب ---
     if is_micro_bull:
         if dist_ma50 <= 3.5 and not is_bleeding:
             tech_score += 15; reasons.append("💎 <b>نقطة الدخول:</b> ارتداد إيجابي آمن من دعم MA50.")
         elif dist_ma50 <= 3.5 and is_bleeding:
-            tech_score += 0; veto_max_69 = True; reasons.append("⏳ <b>اختبار الدعم:</b> السعر ينزل نحو الدعم. ننتظر الارتداد.")
+            tech_score += 0; veto_max_79 = True; reasons.append("⏳ <b>اختبار الدعم:</b> السعر ينزل نحو الدعم. ننتظر الارتداد.")
         elif dist_ma50 > 8.0:
-            tech_score -= 10; veto_max_69 = True; reasons.append(f"⚠️ <b>التضخم:</b> السعر طار وابتعد عن الدعم بنسبة {dist_ma50:.1f}%.")
+            tech_score -= 10; veto_max_79 = True; reasons.append(f"⚠️ <b>التضخم:</b> السعر طار وابتعد عن الدعم بنسبة {dist_ma50:.1f}%.")
         else:
             tech_score += 10; reasons.append("✅ <b>زخم المضاربة:</b> ثبات صحي فوق MA50.")
     else:
         if not golden_watch:
-            tech_score -= 20; veto_max_45 = True; reasons.append("🔴 <b>زخم المضاربة:</b> كسر لمتوسط 50 (ضعف واضح).")
+            tech_score -= 20; veto_max_59 = True; reasons.append("🔴 <b>زخم المضاربة:</b> كسر لمتوسط 50 (ضعف واضح).")
 
-    # --- 4. الحدث اللحظي ---
     if "🚀" in event_text or "🟢" in event_text or "💎" in event_text or "📈" in event_text or "🔥" in event_text: 
         tech_score += 10; reasons.append(f"⚡ <b>الحدث اللحظي:</b> إشارة إيجابية داعمة ({event_text}).")
     elif "🩸" in event_text or "🔴" in event_text or "🛑" in event_text or "⚠️" in event_text or "📉" in event_text: 
         tech_score -= 15; reasons.append(f"⚠️ <b>الحدث اللحظي:</b> ضغط بيعي ({event_text}).")
-        if "كسر" in event_text: veto_max_45 = True
+        if "كسر" in event_text: veto_max_59 = True
 
     if pd.notna(zr_low) and last_close <= zr_low * 1.05: tech_score += 10; reasons.append("🎯 <b>زيرو انعكاس:</b> السعر يختبر قاع القناة (فرصة ارتداد).")
-    elif pd.notna(zr_high) and last_close >= zr_high * 0.97: tech_score -= 15; veto_max_69 = True; reasons.append("🧱 <b>تحذير زيرو:</b> السعر يصطدم بسقف القناة (مقاومة).")
+    elif pd.notna(zr_high) and last_close >= zr_high * 0.97: tech_score -= 15; veto_max_79 = True; reasons.append("🧱 <b>تحذير زيرو:</b> السعر يصطدم بسقف القناة (مقاومة).")
 
     tech_score = int(max(0, min(100, tech_score)))
 
@@ -160,23 +158,21 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     final_score = int((tech_score * 0.4) + (mom_score * 0.6))
     reasons.insert(0, f"📊 <b>زخم السيولة التراكمي:</b> يمتلك السهم قوة اندفاع تقدر بـ <b>{mom_score}/100</b>.")
 
-    # 🛑 قوانين الفيتو الصارمة
+    # 🛑 قوانين الفيتو المحدثة (للتوافق مع نظام 3 تصنيفات)
     if golden_watch and not is_bleeding:
-        final_score = min(max(final_score, 60), 69)
-        reasons.insert(0, "🛡️ <b>[فيتو التعافي]:</b> السهم يتعافى بزخم عالٍ. تم إبقاؤه في وضع (المراقبة اللصيقة) حتى يخترق 200.")
+        final_score = min(max(final_score, 60), 79)
+        reasons.insert(0, "🛡️ <b>[فيتو التعافي]:</b> السهم يتعافى بزخم عالٍ، تم وضعه في قسم (Watch).")
     elif not is_macro_bull and not is_micro_bull and is_bleeding:
-        final_score = min(final_score, 35); reasons.insert(0, "🛑 <b>[فيتو الانهيار]:</b> السهم منهار سلبياً بالكامل.")
-    elif veto_max_45 and not golden_watch:
-        final_score = min(final_score, 45); reasons.insert(0, "🛡️ <b>[فيتو المخاطر]:</b> تم إجبار التقييم للسلبي بسبب كسر دعوم أو سلبية مفرطة.")
-    elif veto_max_69 or is_bleeding or rsi > 72:
-        final_score = min(final_score, 69); reasons.insert(0, "🛡️ <b>[فيتو الأمان]:</b> تم حجب إشارة الشراء لانتظار التأكيد (تضخم، مقاومة، أو تصحيح حالي).")
+        final_score = min(final_score, 59); reasons.insert(0, "🛑 <b>[فيتو الانهيار]:</b> السهم ضعيف جداً، تم إعطاء أمر (Avoid).")
+    elif veto_max_59 and not golden_watch:
+        final_score = min(final_score, 59); reasons.insert(0, "🛡️ <b>[فيتو المخاطر]:</b> بسبب كسر الدعوم تم إعطاء أمر (Avoid).")
+    elif veto_max_79 or is_bleeding or rsi > 72:
+        final_score = min(final_score, 79); reasons.insert(0, "🛡️ <b>[فيتو الأمان]:</b> لتجنب التعليقة أثناء التصحيح أو المقاومة، تم إعطاء أمر (Watch).")
 
-    if final_score >= 80 and not is_bleeding: dec, col = "شراء قوي 💎🚀", "#FFD700"
-    elif final_score >= 70: dec, col = "شراء / تجميع 🟢📈", "#00E676"
-    elif 60 <= final_score <= 69 and golden_watch: dec, col = "مراقبة / تعافي مرتقب 👀", "#00d2ff" 
-    elif 46 <= final_score <= 69: dec, col = "مراقبة / انتظار 🟡⏳", "#FFB300"
-    elif 30 <= final_score <= 45: dec, col = "سلبية / لا تشتري 🔴🔻", "#FF5252"
-    else: dec, col = "خروج / انهيار ⛔🩸", "#D32F2F"
+    # 🔥 التصنيف الثلاثي المباشر الذي طلبه المدير
+    if final_score >= 80: dec, col = "Strong Buy 🟢", "#00E676"
+    elif final_score >= 60: dec, col = "Watch 🟡", "#FFD700"
+    else: dec, col = "Avoid 🔴", "#FF5252"
 
     return final_score, dec, col, reasons
 
@@ -326,13 +322,13 @@ def scan_market(watchlist_list):
 
                 ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d)
                 
-                ai_picks.append({"السهم": sym, "السعر": round(last_c, 2), "التقييم 🤖": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "القرار الخوارزمي": ai_dec, "اللون": ai_col})
+                ai_picks.append({"السهم": sym, "السعر": round(last_c, 2), "Score 💯": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "التوصية 🚦": ai_dec, "اللون": ai_col})
 
         except Exception as e: continue
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي الصارم (المحرك الهجين V28) 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي | التوصيات المباشرة 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
@@ -347,7 +343,7 @@ if analyze_btn or ticker:
     ticker = ticker.upper() 
     selected_watchlist = US_WATCHLIST if "الأمريكي" in market_choice else SAUDI_WATCHLIST
     
-    with st.spinner(f"جاري مسح السوق وقياس (تسارع السيولة 🌊) والذكاء الاستراتيجي..."):
+    with st.spinner(f"جاري مسح السوق وبناء التوصيات المباشرة (Strong Buy / Watch / Avoid)..."):
         df = get_stock_data(ticker) 
         df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market(selected_watchlist)
         
@@ -486,7 +482,7 @@ if analyze_btn or ticker:
             st.markdown("<br>", unsafe_allow_html=True)
 
             tab_ai, tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
-                "🧠 لوحة القيادة (الذكاء الهجين) 👑",
+                "🧠 لوحة التوصيات المباشرة 👑",
                 "🎯 شارت الاختراقات", 
                 "🗂️ ماسح السوق (Loads)",
                 "🚨 رادار التنبيهات",
@@ -503,15 +499,16 @@ if analyze_btn or ticker:
                     ai_score, ai_decision, ai_color, ai_reasons = get_ai_analysis(last_close, last_sma50, last_sma200, last_rsi, last_counter, last_zr_low, last_zr_high, main_event_text, main_bo_score_add, main_mom_score, main_vol_accel_ratio, pct_1d_main)
                     
                     st.markdown(f"""
-                    <div class="ai-box">
+                    <div class="ai-box" style="border-top-color: {ai_color};">
                         <div class="ai-header-flex">
-                            <div class="ai-title">🤖 التقرير الآلي المُدقق لسهم ({ticker})</div>
+                            <div class="ai-title" style="color: {ai_color};">🎯 خطة التداول المُباشرة: ({ticker})</div>
                             <div class="ai-score-circle" style="border-color: {ai_color}; color: {ai_color};">
-                                {ai_score}
+                                <span class="ai-score-num">{ai_score}</span>
+                                <span class="ai-score-max">/ 100</span>
                             </div>
                         </div>
-                        <div class="ai-decision-text" style="color: {ai_color};">
-                            القرار النهائي: {ai_decision}
+                        <div class="ai-decision-text" style="color: {ai_color}; border-color: {ai_color};">
+                            {ai_decision}
                         </div>
                         <div style="margin-top: 15px;">
                             {''.join([f'<div class="ai-reason-item" dir="rtl">{r}</div>' for r in ai_reasons])}
@@ -519,16 +516,16 @@ if analyze_btn or ticker:
                     </div>
                     """, unsafe_allow_html=True)
 
-                    st.markdown("#### 🎯 خطة التداول الآلي لأسهم القائمة (النظام الهجين):")
+                    st.markdown("#### 🎯 التوصيات المباشرة لأسهم القائمة:")
                     if not df_ai_picks.empty:
-                        df_ai_disp = pd.DataFrame(df_ai_picks).sort_values(by="التقييم 🤖", ascending=False)
-                        html_ai = "<table class='ai-table' dir='rtl'><tr><th>السهم</th><th>السعر</th><th>التقييم 🤖</th><th>الزخم 🌊</th><th>الحالة اللحظية ⚡</th><th>الهدف 🎯</th><th>الوقف 🛡️</th><th>القرار الخوارزمي</th></tr>"
+                        df_ai_disp = pd.DataFrame(df_ai_picks).sort_values(by="Score 💯", ascending=False)
+                        html_ai = "<table class='ai-table' dir='rtl'><tr><th>السهم</th><th>السعر</th><th>Score 💯</th><th>الزخم 🌊</th><th>الحالة اللحظية ⚡</th><th>الهدف 🎯</th><th>الوقف 🛡️</th><th>التوصية 🚦</th></tr>"
                         for _, row in df_ai_disp.iterrows():
-                            html_ai += f"<tr><td><b>{row['السهم']}</b></td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:18px; font-weight:bold;'>{row['التقييم 🤖']}</td><td>{row['الزخم 🌊']}</td><td>{row['الحالة اللحظية ⚡']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']}; font-weight:bold;'>{row['القرار الخوارزمي']}</td></tr>"
+                            html_ai += f"<tr><td><b>{row['السهم']}</b></td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:18px; font-weight:bold;'>{row['Score 💯']}/100</td><td>{row['الزخم 🌊']}</td><td>{row['الحالة اللحظية ⚡']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']};'><span class='rec-badge' style='background-color:{row['اللون']}20; border:1px solid {row['اللون']}50;'>{row['التوصية 🚦']}</span></td></tr>"
                         html_ai += "</table>"
                         st.markdown(html_ai, unsafe_allow_html=True)
                     else:
-                        st.markdown("<div class='empty-box'>السوق هادئ جداً. لا توجد أسهم تم التقاطها حالياً. (تأكد من عمل اتصال الإنترنت).</div>", unsafe_allow_html=True)
+                        st.markdown("<div class='empty-box'>السوق هادئ جداً. لا توجد أسهم تم التقاطها حالياً.</div>", unsafe_allow_html=True)
 
                 with col_ai_reports:
                     st.markdown("<div class='scanner-header-gray'>التغييرات الأخيرة في الاتجاه</div>", unsafe_allow_html=True)

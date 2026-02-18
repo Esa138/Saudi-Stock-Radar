@@ -91,10 +91,10 @@ def get_mom_badge(score):
     else: return f"<span style='background-color:rgba(255,82,82,0.2); color:#FF5252; padding: 4px 8px; border-radius:6px; border:1px solid #FF5252; font-weight:bold;'>{score} ❄️</span>"
 
 # ==========================================
-# 🧠 3. محرك ذكاء ماسة الهجين (V30 - 3 Tiers Output)
+# 🧠 3. محرك ذكاء ماسة الهجين (V31 - التوصيات المباشرة بالعربية)
 # ==========================================
 def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d):
-    if pd.isna(ma50) or pd.isna(ma200): return 0, "Wait ⏳", "gray", ["بيانات غير كافية للتحليل."]
+    if pd.isna(ma50) or pd.isna(ma200): return 0, "جاري الحساب ⏳", "gray", ["بيانات غير كافية للتحليل."]
     
     tech_score = 50
     reasons = []
@@ -158,21 +158,21 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     final_score = int((tech_score * 0.4) + (mom_score * 0.6))
     reasons.insert(0, f"📊 <b>زخم السيولة التراكمي:</b> يمتلك السهم قوة اندفاع تقدر بـ <b>{mom_score}/100</b>.")
 
-    # 🛑 قوانين الفيتو المحدثة (للتوافق مع نظام 3 تصنيفات)
+    # 🛑 قوانين الفيتو المحدثة
     if golden_watch and not is_bleeding:
         final_score = min(max(final_score, 60), 79)
-        reasons.insert(0, "🛡️ <b>[فيتو التعافي]:</b> السهم يتعافى بزخم عالٍ، تم وضعه في قسم (Watch).")
+        reasons.insert(0, "🛡️ <b>[فيتو التعافي]:</b> السهم يتعافى بزخم عالٍ، تم وضعه في قسم (مراقبة).")
     elif not is_macro_bull and not is_micro_bull and is_bleeding:
-        final_score = min(final_score, 59); reasons.insert(0, "🛑 <b>[فيتو الانهيار]:</b> السهم ضعيف جداً، تم إعطاء أمر (Avoid).")
+        final_score = min(final_score, 59); reasons.insert(0, "🛑 <b>[فيتو الانهيار]:</b> السهم ضعيف جداً، تم إعطاء أمر (تجنب).")
     elif veto_max_59 and not golden_watch:
-        final_score = min(final_score, 59); reasons.insert(0, "🛡️ <b>[فيتو المخاطر]:</b> بسبب كسر الدعوم تم إعطاء أمر (Avoid).")
+        final_score = min(final_score, 59); reasons.insert(0, "🛡️ <b>[فيتو المخاطر]:</b> بسبب كسر الدعوم تم إعطاء أمر (تجنب).")
     elif veto_max_79 or is_bleeding or rsi > 72:
-        final_score = min(final_score, 79); reasons.insert(0, "🛡️ <b>[فيتو الأمان]:</b> لتجنب التعليقة أثناء التصحيح أو المقاومة، تم إعطاء أمر (Watch).")
+        final_score = min(final_score, 79); reasons.insert(0, "🛡️ <b>[فيتو الأمان]:</b> لتجنب التعليقة أثناء التصحيح أو المقاومة، تم إعطاء أمر (مراقبة).")
 
-    # 🔥 التصنيف الثلاثي المباشر الذي طلبه المدير
-    if final_score >= 80: dec, col = "Strong Buy 🟢", "#00E676"
-    elif final_score >= 60: dec, col = "Watch 🟡", "#FFD700"
-    else: dec, col = "Avoid 🔴", "#FF5252"
+    # 🔥 التصنيف الثلاثي المباشر بالعربية
+    if final_score >= 80: dec, col = "شراء قوي 🟢", "#00E676"
+    elif final_score >= 60: dec, col = "مراقبة 🟡", "#FFD700"
+    else: dec, col = "تجنب 🔴", "#FF5252"
 
     return final_score, dec, col, reasons
 
@@ -343,7 +343,7 @@ if analyze_btn or ticker:
     ticker = ticker.upper() 
     selected_watchlist = US_WATCHLIST if "الأمريكي" in market_choice else SAUDI_WATCHLIST
     
-    with st.spinner(f"جاري مسح السوق وبناء التوصيات المباشرة (Strong Buy / Watch / Avoid)..."):
+    with st.spinner(f"جاري مسح السوق وبناء التوصيات المباشرة..."):
         df = get_stock_data(ticker) 
         df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market(selected_watchlist)
         

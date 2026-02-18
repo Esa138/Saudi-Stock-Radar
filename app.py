@@ -130,7 +130,6 @@ def save_to_tracker(df_vip, market):
             df_old['Date_Only'] = df_old['تاريخ الرصد'].apply(lambda x: str(x).split(' | ')[0] if pd.notna(x) else "")
             
         df_combined = pd.concat([df_old, df_new], ignore_index=True)
-        # منع تكرار نفس السهم في نفس اليوم
         df_combined = df_combined.drop_duplicates(subset=['Date_Only', 'الرمز'], keep='last')
         df_combined.to_csv(TRACKER_FILE, index=False, encoding='utf-8-sig')
     else:
@@ -235,7 +234,7 @@ def get_cat(val):
 
 def format_cat(val, cat):
     if pd.isna(val): return ""
-    if val > 0: return f"🟢 {val:.2f}% ({cat})"
+    if val > 0: return f"🟢 +{val:.2f}% ({cat})"
     elif val < 0: return f"🔴 {val:.2f}% ({cat})"
     return f"⚪ {val:.2f}% ({cat})"
 
@@ -248,7 +247,6 @@ def scan_market(watchlist_list):
     loads_list, alerts_list, ai_picks = [], [], []
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
     
-    # ⏱️ توقيت مكة المكرمة لحفظه في السجل وتتبعه
     saudi_tz = datetime.timezone(datetime.timedelta(hours=3))
     now = datetime.datetime.now(saudi_tz)
     time_str = now.strftime("%I:%M %p")
@@ -594,11 +592,11 @@ if analyze_btn or ticker:
                     st.markdown("<div class='vip-empty'>قم بمسح السوق أولاً لعرض فرص VIP.</div>", unsafe_allow_html=True)
 
             # ==========================================
-            # 📂 2. قسم مراقبة الأداء (Tracker) المطور والآمن 🛡️
+            # 🛡️ 2. قسم مراقبة الأداء (Tracker) الخالي من الأخطاء كلياً (الحل النووي)
             # ==========================================
             with tab_track:
                 st.markdown("<h3 style='text-align: center; color: #00d2ff; font-weight: bold;'>📂 محفظة المراقبة (Paper Trading)</h3>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center; color: gray;'>احفظ أسهم VIP هنا لمراقبة أدائها. اضغط (تحديث الأسعار) لمعرفة دقة التوصيات ونسبة الربح/الخسارة.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: gray;'>احفظ أسهم VIP هنا لمراقبة أدائها. اضغط (تحديث الأسعار) لمعرفة دقة التوصيات ونسبة الربح/الخسارة بصورة حية.</p>", unsafe_allow_html=True)
                 
                 if os.path.exists(TRACKER_FILE):
                     df_track = pd.read_csv(TRACKER_FILE)
@@ -614,65 +612,34 @@ if analyze_btn or ticker:
                                         ticker_data = yf.Ticker(ticker_sym).history(period="1d")
                                         if not ticker_data.empty:
                                             cp = float(ticker_data['Close'].iloc[-1])
-                                            entry = float(row['سعر الدخول'])
-                                            target = float(row['الهدف'])
-                                            stop = float(row['الوقف'])
+                                            entry = float(str(row['سعر الدخول']).replace(',', ''))
+                                            target = float(str(row['الهدف']).replace(',', ''))
+                                            stop = float(str(row['الوقف']).replace(',', ''))
                                             
-                                            current_prices.append(round(cp, 2))
+                                            current_prices.append(f"{cp:.2f}")
                                             pnl = ((cp - entry) / entry) * 100
-                                            pnl_list.append(pnl)
+                                            
+                                            # 🔥 الحل النووي: حفظ الإيموجي داخل النص نفسه، وترك الاستايلينق بالكامل!
+                                            if pnl > 0: pnl_list.append(f"🟢 +{pnl:.2f}%")
+                                            elif pnl < 0: pnl_list.append(f"🔴 {pnl:.2f}%")
+                                            else: pnl_list.append("⚪ 0.00%")
                                             
                                             if cp >= target: status_list.append("✅ حقق الهدف")
                                             elif cp <= stop: status_list.append("❌ ضرب الوقف")
-                                            elif pnl > 0: status_list.append("🟢 ربح عائم")
-                                            else: status_list.append("🔴 خسارة عائمة")
+                                            elif pnl > 0: status_list.append("📈 ربح عائم")
+                                            else: status_list.append("📉 خسارة عائمة")
                                         else:
-                                            current_prices.append(None); pnl_list.append(None); status_list.append("غير متاح")
-                                    except Exception as e:
-                                        current_prices.append(None); pnl_list.append(None); status_list.append("خطأ")
+                                            current_prices.append("➖"); pnl_list.append("➖"); status_list.append("غير متاح")
+                                    except Exception:
+                                        current_prices.append("➖"); pnl_list.append("➖"); status_list.append("خطأ بيانات")
                                         
                                 df_track['السعر الحالي'] = current_prices
-                                df_track['الربح/الخسارة %'] = pnl_list
+                                df_track['الربح/الخسارة'] = pnl_list
                                 df_track['الحالة'] = status_list
                                 
-                                df_disp = df_track.drop(columns=['Date_Only', 'الرمز'], errors='ignore').iloc[::-1].copy()
-                                
-                                # 🛡️ الدالة الذكية والمحصنة ضد أخطاء TypeError!
-                                def style_pnl(val):
-                                    if pd.isna(val) or val == "": return ''
-                                    if isinstance(val, str):
-                                        if "+" in val: return 'color: #00E676; font-weight: bold;'
-                                        elif "-" in val: return 'color: #FF5252; font-weight: bold;'
-                                        return ''
-                                    if isinstance(val, (int, float)):
-                                        if val > 0: return 'color: #00E676; font-weight: bold;'
-                                        elif val < 0: return 'color: #FF5252; font-weight: bold;'
-                                    return ''
-                                    
-                                def style_status(val):
-                                    val_str = str(val)
-                                    if "✅" in val_str or "🟢" in val_str: return 'color: #00E676; font-weight: bold;'
-                                    elif "❌" in val_str or "🔴" in val_str: return 'color: #FF5252; font-weight: bold;'
-                                    return 'color: gray;'
-
-                                def format_pct(x):
-                                    if pd.isna(x) or x is None or x == "": return ""
-                                    try:
-                                        val = float(x)
-                                        return f"+{val:.2f}%" if val > 0 else f"{val:.2f}%"
-                                    except:
-                                        return str(x)
-                                        
-                                df_disp['الربح/الخسارة %'] = df_disp['الربح/الخسارة %'].apply(format_pct)
-                                
-                                # التلوين الآمن
-                                styler = df_disp.style
-                                if hasattr(styler, 'map'):
-                                    styled_df = styler.map(style_pnl, subset=['الربح/الخسارة %']).map(style_status, subset=['الحالة'])
-                                else:
-                                    styled_df = styler.applymap(style_pnl, subset=['الربح/الخسارة %']).applymap(style_status, subset=['الحالة'])
-                                    
-                                st.dataframe(styled_df, use_container_width=True, hide_index=True)
+                                # رسم الجدول العادي بدون استخدام style.applymap نهائياً لمنع أي انهيار
+                                df_disp = df_track.drop(columns=['Date_Only', 'الرمز'], errors='ignore').iloc[::-1]
+                                st.dataframe(df_disp, use_container_width=True, hide_index=True)
                         else:
                             df_disp = df_track.drop(columns=['Date_Only', 'الرمز'], errors='ignore').iloc[::-1]
                             st.dataframe(df_disp, use_container_width=True, hide_index=True)
@@ -771,7 +738,7 @@ if analyze_btn or ticker:
                         st.markdown(html_bdn, unsafe_allow_html=True)
                     else: st.markdown("<div class='empty-box'>لا توجد كسور اليوم</div>", unsafe_allow_html=True)
 
-            # (باقي التبويبات بدون أي تغيير)
+            # (باقي التبويبات بدون تغيير)
             with tab1:
                 c1, c2, c3, c4 = st.columns(4)
                 show_3d = c1.checkbox("عرض 3 أيام 🟠", value=True)
@@ -808,7 +775,6 @@ if analyze_btn or ticker:
                         elif isinstance(val, int) and (val < 0): return 'color: #f44336; font-weight: bold;'
                         return ''
                     df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'])
-                    
                     styler_loads = df_loads_styled.style.map(color_loads_values) if hasattr(df_loads_styled.style, 'map') else df_loads_styled.style.applymap(color_loads_values)
                     st.dataframe(styler_loads, use_container_width=True, height=550, hide_index=True)
 

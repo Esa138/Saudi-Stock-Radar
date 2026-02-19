@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V52 Institutional", layout="wide", page_icon="💎", initial_sidebar_state="expanded")
+st.set_page_config(page_title="منصة ماسة 💎 | V53 Institutional", layout="wide", page_icon="💎", initial_sidebar_state="expanded")
 
 DB_FILE = "masa_database.db"
 
@@ -309,7 +309,7 @@ def scan_market_async(watchlist_list):
             if df is not None: histories[tk] = df
 
     for tk in watchlist_list:
-        try: # 🛡️ إضافة الكلمة المفقودة هنا!
+        try: 
             df_s = histories.get(tk)
             if df_s is not None:
                 c, h, l, vol = df_s['Close'], df_s['High'], df_s['Low'], df_s['Volume']
@@ -411,15 +411,18 @@ def scan_market_async(watchlist_list):
                 ai_picks.append({"الشركة": stock_name, "الرمز": tk, "السعر": round(last_c, 2), "Score 💯": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "التوصية 🚦": ai_dec, "وقت الدخول 🕒": f"<span style='color:#aaa; font-size:12px;'>{time_str}</span>", "اللون": ai_col, "raw_score": ai_score, "raw_mom": mom_score, "raw_events": event_text, "raw_time": full_time_str, "raw_target": target, "raw_sl": sl})
 
         except Exception as e: 
-            continue # 🛡️ الآن هذه الجملة محمية وستعمل بدون أي Syntax Error!
+            continue
 
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
 # 🌟 5. واجهة المستخدم
 # ==========================================
-st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v52 (Institutional)</span></h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v53 (Institutional)</span></h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي | إدارة المحافظ والتنبيهات 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
+
+# 🚀 التصحيح العبقري: تعريف تاريخ اليوم في نطاق الواجهة (Scope Fix) لتفادي الـ NameError
+today_str = datetime.datetime.now().strftime("%Y-%m-%d")
 
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
@@ -543,9 +546,10 @@ if analyze_btn or ticker:
                                 pos_value = shares * row['السعر']
                             else: shares, pos_value = 0, 0
                             
+                            # 🛡️ الحماية المضافة: alert_id يعتمد على today_str المعرّف خارج الدالة
                             alert_id = f"{today_str}_{row['الرمز']}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 <b>Masa VIP Alert!</b> 💎\n\n📌 <b>Stock:</b> {row['الشركة']} ({row['الرمز']})\n💰 <b>Price:</b> {row['السعر']}\n🎯 <b>Target:</b> {row['raw_target']:.2f}\n🛡️ <b>SL:</b> {row['raw_sl']:.2f}\n⚖️ <b>Max Shares:</b> {shares}\n\n🤖 <i>Masa Quant System V52</i>"
+                                msg = f"🚨 <b>Masa VIP Alert!</b> 💎\n\n📌 <b>Stock:</b> {row['الشركة']} ({row['الرمز']})\n💰 <b>Price:</b> {row['السعر']}\n🎯 <b>Target:</b> {row['raw_target']:.2f}\n🛡️ <b>SL:</b> {row['raw_sl']:.2f}\n⚖️ <b>Max Shares:</b> {shares}\n\n🤖 <i>Masa Quant System V53</i>"
                                 try:
                                     requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "HTML"})
                                     st.session_state.tg_sent.add(alert_id)

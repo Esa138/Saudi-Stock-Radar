@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V53 Institutional", layout="wide", page_icon="💎", initial_sidebar_state="expanded")
+st.set_page_config(page_title="منصة ماسة 💎 | V54 Institutional", layout="wide", page_icon="💎")
 
 DB_FILE = "masa_database.db"
 
@@ -49,7 +49,6 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .qafah-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; text-align: center; background-color: #1e2129; border-radius: 5px; overflow: hidden;}
 .qafah-table th { color: white; padding: 10px; font-weight: bold; }
 .qafah-table td { color: #e0e0e0; padding: 10px; border-bottom: 1px solid #2d303e; }
-[data-testid="collapsedControl"] { display: none; }
 .search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); text-align: center;}
 .empty-box { text-align:center; padding:15px; background-color:#1e2129; border-radius:8px; color:#888; margin-bottom:15px; font-size:15px; border: 1px dashed #2d303e;}
 
@@ -86,20 +85,7 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# ==========================================
-# ⚙️ إعدادات المحفظة الجانبية
-# ==========================================
-with st.sidebar:
-    st.markdown("<h3 style='color:#00d2ff; text-align:center;'>⚙️ إدارة المخاطر (Position Sizing)</h3>", unsafe_allow_html=True)
-    capital = st.number_input("💵 حجم المحفظة الكلي:", min_value=1000.0, value=100000.0, step=1000.0)
-    risk_pct = st.number_input("⚖️ نسبة المخاطرة للصفقة (%):", min_value=0.1, max_value=10.0, value=1.0, step=0.1)
-    
-    st.markdown("<hr style='border-color:#2d303e;'>", unsafe_allow_html=True)
-    st.markdown("<h3 style='color:#00E676; text-align:center;'>🤖 إشعارات التليجرام</h3>", unsafe_allow_html=True)
-    tg_token = st.text_input("Bot Token (اختياري)", type="password", placeholder="أدخل التوكن هنا...")
-    tg_chat = st.text_input("Chat ID (اختياري)", placeholder="أدخل معرف المحادثة...")
-    st.markdown("<p style='font-size:12px; color:gray; text-align:center;'>سيتم إرسال الصفقات الـ VIP آلياً لهاتفك بمجرد اصطيادها.</p>", unsafe_allow_html=True)
-
+# منع تكرار الإرسال للتليجرام
 if 'tg_sent' not in st.session_state:
     st.session_state.tg_sent = set()
 
@@ -240,7 +226,7 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     return final_score, dec, col, reasons
 
 # ==========================================
-# ⚡ 4. المحرك الصاروخي
+# ⚡ 4. التنسيق والمحرك الصاروخي
 # ==========================================
 def get_cat(val):
     if pd.isna(val) or val == "": return ""
@@ -418,11 +404,22 @@ def scan_market_async(watchlist_list):
 # ==========================================
 # 🌟 5. واجهة المستخدم
 # ==========================================
-st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v53 (Institutional)</span></h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي | إدارة المحافظ والتنبيهات 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v54</span></h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 20px;'>مستشارك الآلي الخوارزمي | إدارة المحافظ والتنبيهات 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
 
-# 🚀 التصحيح العبقري: تعريف تاريخ اليوم في نطاق الواجهة (Scope Fix) لتفادي الـ NameError
 today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+
+# 🚨 نقل الإعدادات إلى لوحة تحكم علوية
+with st.expander("⚙️ لوحة التحكم والإعدادات (المحفظة وتليجرام)", expanded=False):
+    c_set1, c_set2 = st.columns(2)
+    with c_set1:
+        st.markdown("<h4 style='color:#00d2ff; text-align:right;'>⚙️ إدارة المخاطر</h4>", unsafe_allow_html=True)
+        capital = st.number_input("💵 حجم المحفظة الكلي:", min_value=1000.0, value=100000.0, step=1000.0)
+        risk_pct = st.number_input("⚖️ نسبة المخاطرة للصفقة (%):", min_value=0.1, max_value=10.0, value=1.0, step=0.1)
+    with c_set2:
+        st.markdown("<h4 style='color:#00E676; text-align:right;'>🤖 إشعارات التليجرام</h4>", unsafe_allow_html=True)
+        tg_token = st.text_input("Bot Token (الصق توكن الروبوت هنا)", type="password")
+        tg_chat = st.text_input("Chat ID (الصق رقم غرفتك هنا)")
 
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 market_choice = st.radio("اختر نطاق الماسح الآلي 🌐:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
@@ -546,10 +543,9 @@ if analyze_btn or ticker:
                                 pos_value = shares * row['السعر']
                             else: shares, pos_value = 0, 0
                             
-                            # 🛡️ الحماية المضافة: alert_id يعتمد على today_str المعرّف خارج الدالة
                             alert_id = f"{today_str}_{row['الرمز']}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 <b>Masa VIP Alert!</b> 💎\n\n📌 <b>Stock:</b> {row['الشركة']} ({row['الرمز']})\n💰 <b>Price:</b> {row['السعر']}\n🎯 <b>Target:</b> {row['raw_target']:.2f}\n🛡️ <b>SL:</b> {row['raw_sl']:.2f}\n⚖️ <b>Max Shares:</b> {shares}\n\n🤖 <i>Masa Quant System V53</i>"
+                                msg = f"🚨 <b>Masa VIP Alert!</b> 💎\n\n📌 <b>Stock:</b> {row['الشركة']} ({row['الرمز']})\n💰 <b>Price:</b> {row['السعر']}\n🎯 <b>Target:</b> {row['raw_target']:.2f}\n🛡️ <b>SL:</b> {row['raw_sl']:.2f}\n⚖️ <b>Max Shares:</b> {shares}\n\n🤖 <i>Masa Quant System V54</i>"
                                 try:
                                     requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "HTML"})
                                     st.session_state.tg_sent.add(alert_id)
@@ -563,7 +559,7 @@ if analyze_btn or ticker:
                 else: st.markdown("<div class='vip-empty'>قم بمسح السوق أولاً لعرض فرص VIP.</div>", unsafe_allow_html=True)
 
             # ==========================================
-            # ⏳ 2. الباك تيست (التنسيق الأنيق 💎)
+            # ⏳ 2. الباك تيست 
             # ==========================================
             with tab_backtest:
                 st.markdown(f"<h3 style='text-align: center; color: #00d2ff; font-weight: bold;'>⏳ محرك الاختبار التاريخي لـ ({display_name})</h3>", unsafe_allow_html=True)

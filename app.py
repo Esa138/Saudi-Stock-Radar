@@ -227,7 +227,7 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     return final_score, dec, col, reasons
 
 # ==========================================
-# ⚡ 4. التنسيق والألوان المدرعة (V43 Style)
+# ⚡ 4. التنسيق والألوان المدرعة 🛡️
 # ==========================================
 def get_cat(val):
     if pd.isna(val) or val == "": return ""
@@ -247,6 +247,7 @@ def format_cat(val, cat):
         return f"⚪ {f_val:.2f}% ({cat})"
     except: return str(val)
 
+# درع الحماية ضد KeyError: الفحص الديناميكي للأعمدة
 def safe_color_table(val):
     val_str = str(val)
     if "🟢" in val_str or "✅" in val_str or "🚀" in val_str or "💎" in val_str: return 'color: #00E676; font-weight: bold;'
@@ -269,7 +270,7 @@ def get_stock_data(ticker_symbol):
     return df
 
 @st.cache_data(ttl=1800)
-def scan_market(watchlist_list):
+def scan_market(watchlist_list, cache_buster="v44_classic_stable"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -327,18 +328,19 @@ def scan_market(watchlist_list):
 
                 cat_1d, cat_3d, cat_5d, cat_10d = get_cat(pct_1d), get_cat(pct_3d), get_cat(pct_5d), get_cat(pct_10d)
                 
+                # إرجاع القاموس بأسماء عربية صريحة لكي لا ينهار مع الفرشاة
                 loads_list.append({
                     "الشركة": stock_name, 
                     "التاريخ": today_str, 
                     "الاتجاه": int(cur_count), 
                     "أيام": abs(cur_count), 
-                    "load diff 1d %": pct_1d, "1d_cat": cat_1d, 
-                    "load diff 3d %": pct_3d, "3d_cat": cat_3d, 
-                    "load diff 5d %": pct_5d, "5d_cat": cat_5d, 
-                    "load diff 10d %": pct_10d, "10d_cat": cat_10d,
-                    "حالة 3أيام": "✅" if pct_3d > 0 else "❌",
-                    "حالة 5أيام": "✅" if pct_5d > 0 else "❌",
-                    "حالة 10أيام": "✅" if pct_10d > 0 else "❌"
+                    "تغير 1 يوم": pct_1d, "1d_cat": cat_1d, 
+                    "تراكمي 3 أيام": pct_3d, "3d_cat": cat_3d, 
+                    "تراكمي 5 أيام": pct_5d, "5d_cat": cat_5d, 
+                    "تراكمي 10 أيام": pct_10d, "10d_cat": cat_10d,
+                    "حالة 3 أيام": "✅" if pct_3d > 0 else "❌",
+                    "حالة 5 أيام": "✅" if pct_5d > 0 else "❌",
+                    "حالة 10 أيام": "✅" if pct_10d > 0 else "❌"
                 })
 
                 bo_today, bd_today = [], []
@@ -395,9 +397,9 @@ def scan_market(watchlist_list):
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
-# 🌟 5. واجهة المستخدم (V43 كلاسيك - مستقرة 100%)
+# 🌟 5. واجهة المستخدم (V44 الكلاسيكية القوية)
 # ==========================================
-st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v43 (الكلاسيكية)</span></h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v44</span></h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي | التوصيات المباشرة 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
@@ -431,7 +433,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 if analyze_btn or ticker:
     with st.spinner(f"جاري مسح السوق لـ ({display_name})... ⏳"):
         
-        # 🛡️ المعالجة الآمنة للبيانات
+        # 🛡️ المعالجة الآمنة
         df = get_stock_data(ticker)
         
         if df.empty: 
@@ -443,7 +445,7 @@ if analyze_btn or ticker:
             df['SMA_50'] = close.rolling(window=50).mean()
             df['SMA_200'] = close.rolling(window=200).mean() if len(close) >= 200 else close.rolling(window=50).mean()
             
-            # 🔥 إعداد الأعمدة للشارت والبيانات لمنع أي خطأ KeyError
+            # 🔥 إعداد الأعمدة للشارت لمنع أي KeyError
             df['High_3D'] = high.rolling(3).max().shift(1)
             df['Low_3D'] = low.rolling(3).min().shift(1)
             df['High_4D'] = high.rolling(4).max().shift(1)
@@ -597,7 +599,7 @@ if analyze_btn or ticker:
                 else: st.markdown("<div class='empty-box'>السوق هادئ جداً. لا توجد أسهم تم التقاطها حالياً.</div>", unsafe_allow_html=True)
 
             # ==========================================
-            # 🎯 4. شارت الاختراقات (تم القضاء على الـ KeyError نهائياً 🛡️)
+            # 🎯 4. شارت الاختراقات
             # ==========================================
             with tab1:
                 c1, c2, c3, c4 = st.columns(4)
@@ -636,24 +638,40 @@ if analyze_btn or ticker:
                     df_loads_styled = pd.DataFrame(df_loads).copy()
                     
                     # دمج التصنيفات بشكل نصي صلب لا ينهار
-                    df_loads_styled['load diff 1d %'] = df_loads_styled.apply(lambda x: format_cat(x['load diff 1d %'], x['1d_cat']), axis=1)
-                    df_loads_styled['load diff 3d %'] = df_loads_styled.apply(lambda x: format_cat(x['load diff 3d %'], x['3d_cat']), axis=1)
-                    df_loads_styled['load diff 5d %'] = df_loads_styled.apply(lambda x: format_cat(x['load diff 5d %'], x['5d_cat']), axis=1)
-                    df_loads_styled['load diff 10d %'] = df_loads_styled.apply(lambda x: format_cat(x['load diff 10d %'], x['10d_cat']), axis=1)
+                    df_loads_styled['تغير 1 يوم'] = df_loads_styled.apply(lambda x: format_cat(x['تغير 1 يوم'], x['1d_cat']), axis=1)
+                    df_loads_styled['تراكمي 3 أيام'] = df_loads_styled.apply(lambda x: format_cat(x['تراكمي 3 أيام'], x['3d_cat']), axis=1)
+                    df_loads_styled['تراكمي 5 أيام'] = df_loads_styled.apply(lambda x: format_cat(x['تراكمي 5 أيام'], x['5d_cat']), axis=1)
+                    df_loads_styled['تراكمي 10 أيام'] = df_loads_styled.apply(lambda x: format_cat(x['تراكمي 10 أيام'], x['10d_cat']), axis=1)
                     
+                    # حذف الأعمدة المساعدة
                     df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
                     
-                    subset_cols = ['load diff 1d %', 'Top G/L 3Days', 'load diff 3d %', 'Top G/L 5Days', 'load diff 5d %', 'Top G/L 10days', 'load diff 10d %']
-                    styler_loads = df_loads_styled.style.map(safe_color_table, subset=subset_cols) if hasattr(df_loads_styled.style, 'map') else df_loads_styled.style.applymap(safe_color_table, subset=subset_cols)
-                    st.dataframe(styler_loads, use_container_width=True, height=550, hide_index=True)
+                    # 🛡️ الدرع الواقي: تأكد من أن الأعمدة موجودة قبل التلوين
+                    subset_cols = [c for c in ['تغير 1 يوم', 'حالة 3 أيام', 'تراكمي 3 أيام', 'حالة 5 أيام', 'تراكمي 5 أيام', 'حالة 10 أيام', 'تراكمي 10 أيام'] if c in df_loads_styled.columns]
+                    
+                    if subset_cols:
+                        if hasattr(df_loads_styled.style, 'map'):
+                            styler_loads = df_loads_styled.style.map(safe_color_table, subset=subset_cols)
+                        else:
+                            styler_loads = df_loads_styled.style.applymap(safe_color_table, subset=subset_cols)
+                        st.dataframe(styler_loads, use_container_width=True, height=550, hide_index=True)
+                    else:
+                        st.dataframe(df_loads_styled.astype(str), use_container_width=True, height=550, hide_index=True)
 
             # ==========================================
-            # 🚨 6. الرادار (البسيط القديم)
+            # 🚨 6. الرادار الكلاسيكي
             # ==========================================
             with tab6:
                 if not df_alerts.empty:
-                    styler_alerts = pd.DataFrame(df_alerts).style.map(safe_color_table) if hasattr(pd.DataFrame(df_alerts).style, 'map') else pd.DataFrame(df_alerts).style.applymap(safe_color_table)
-                    st.dataframe(styler_alerts, use_container_width=True, height=550, hide_index=True)
+                    df_alerts_disp = pd.DataFrame(df_alerts)
+                    if 'التنبيه' in df_alerts_disp.columns:
+                        if hasattr(df_alerts_disp.style, 'map'):
+                            styler_alerts = df_alerts_disp.style.map(safe_color_table, subset=['التنبيه'])
+                        else:
+                            styler_alerts = df_alerts_disp.style.applymap(safe_color_table, subset=['التنبيه'])
+                        st.dataframe(styler_alerts, use_container_width=True, height=550, hide_index=True)
+                    else:
+                        st.dataframe(df_alerts_disp.astype(str), use_container_width=True, height=550, hide_index=True)
 
             with tab2:
                 tv_ticker = ticker.replace('.SR', '') if ticker.endswith('.SR') else ticker
@@ -680,7 +698,7 @@ if analyze_btn or ticker:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             # ==========================================
-            # 📋 7. جدول البيانات التفصيلي (الذي طلبته)
+            # 📋 7. جدول البيانات (مدرع)
             # ==========================================
             with tab4:
                 df_display = df.copy()
@@ -706,9 +724,16 @@ if analyze_btn or ticker:
                 display_table.set_index('التاريخ', inplace=True)
                 
                 subset_data = ['تغير 1 يوم', 'تراكمي 3 أيام', 'تراكمي 5 أيام', 'تراكمي 10 أيام']
-                styler_data = display_table.style.map(safe_color_table, subset=subset_data) if hasattr(display_table.style, 'map') else display_table.style.applymap(safe_color_table, subset=subset_data)
+                existing_data_cols = [c for c in subset_data if c in display_table.columns]
                 
-                st.dataframe(styler_data, use_container_width=True, height=550)
+                if existing_data_cols:
+                    if hasattr(display_table.style, 'map'):
+                        styler_data = display_table.style.map(safe_color_table, subset=existing_data_cols)
+                    else:
+                        styler_data = display_table.style.applymap(safe_color_table, subset=existing_data_cols)
+                    st.dataframe(styler_data, use_container_width=True, height=550)
+                else:
+                    st.dataframe(display_table.astype(str), use_container_width=True, height=550)
                 
                 csv = table.tail(30).iloc[::-1].to_csv(index=False).encode('utf-8-sig')
                 st.download_button(label="📥 تصدير البيانات للإكسل", data=csv, file_name=f'Masa_{display_name}.csv', mime='text/csv', use_container_width=True)

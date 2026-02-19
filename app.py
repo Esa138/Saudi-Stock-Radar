@@ -182,7 +182,7 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     if is_macro_bull: tech_score += 15; reasons.append("✅ <b>الاتجاه العام:</b> السهم يتداول في أمان استثماري (فوق MA 200).")
     else: 
         if is_micro_bull and mom_score >= 70 and not is_bleeding:
-            golden_watch = True; tech_score += 5; reasons.append(f"👀 <b>مرحلة تعافي:</b> السهم تحت MA200 لكنه يظهر زخماً قوياً للارتداد.")
+            golden_watch = True; tech_score += 5; reasons.append(f"👀 <b>مرحلة تعافي:</b> السهم تحت MA200 لكنه يظهر زخماً للارتداد.")
         else:
             tech_score -= 25; veto_max_59 = True; reasons.append("❌ <b>الاتجاه العام:</b> السهم ينهار تحت متوسط 200 (مسار هابط).")
 
@@ -249,10 +249,9 @@ def scan_market(watchlist_list):
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
     
     # ⏱️ توقيت مكة المكرمة لحفظه في السجل وتتبعه
-    saudi_tz = datetime.timezone(datetime.timedelta(hours=3))
-    now = datetime.datetime.now(saudi_tz)
-    time_str = now.strftime("%I:%M %p")
-    full_time_str = now.strftime("%Y-%m-%d | %I:%M %p")
+    saudi_time = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+    now_time_str = saudi_time.strftime("%I:%M %p")
+    full_time_str = saudi_time.strftime("%Y-%m-%d | %I:%M %p")
 
     for tk in watchlist_list:
         try:
@@ -364,7 +363,7 @@ def scan_market(watchlist_list):
                     "الهدف 🎯": f"{target:.2f}", 
                     "الوقف 🛡️": f"{sl:.2f}", 
                     "التوصية 🚦": ai_dec,
-                    "وقت الدخول 🕒": f"<span style='color:#aaa; font-size:12px;'>{time_str}</span>",
+                    "وقت الدخول 🕒": f"<span style='color:#aaa; font-size:12px;'>{now_time_str}</span>",
                     "اللون": ai_col,
                     "raw_score": ai_score, 
                     "raw_mom": mom_score,
@@ -549,14 +548,14 @@ if analyze_btn or ticker:
 
             tab_vip, tab_track, tab_ai, tab1, tab5, tab6, tab2, tab3, tab4 = st.tabs([
                 "👑 VIP ماسة",
-                "📂 مراقبة الأداء 🆕",
+                "📂 مراقبة الأداء (Tracker) 🆕",
                 "🧠 لوحة التوصيات",
                 "🎯 شارت الاختراقات", 
-                "🗂️ ماسح السوق",
-                "🚨 الرادار",
+                "🗂️ ماسح السوق (Loads)",
+                "🚨 رادار التنبيهات",
                 "🌐 TradingView", 
-                "📊 الشارت الكمي", 
-                "📋 البيانات"
+                "📊 شارت الخوارزمية", 
+                "📋 بيانات السهم"
             ])
 
             # ==========================================
@@ -575,39 +574,44 @@ if analyze_btn or ticker:
                         st.markdown("<h3 style='text-align: center; color: #ffd700; font-weight: 900; margin-bottom: 5px;'>👑 الصندوق الأسود: أقوى الفرص الاستثمارية الآن</h3>", unsafe_allow_html=True)
                         st.markdown("<p style='text-align: center; color: #888; font-size: 15px; margin-bottom: 20px;'>هذه الأسهم اجتازت جميع فلاتر الأمان (السيولة، الزخم، الاتجاه، الدعم) وجاهزة للشراء.</p>", unsafe_allow_html=True)
                         
+                        # 💾 زر حفظ الفرص في سجل المراقبة
                         col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
                         with col_btn2:
-                            if st.button("💾 حفظ هذه الفرص في محفظة المراقبة (Paper Trading)", use_container_width=True):
+                            if st.button("💾 حفظ هذه التوصيات في سجل المراقبة (Paper Trading)", use_container_width=True):
                                 save_to_tracker(df_vip, market_choice)
-                                st.success("✅ تم الحفظ بنجاح! راجع تبويب (مراقبة الأداء).")
+                                st.success("✅ تم الحفظ بنجاح! راجع تبويب (مراقبة الأداء Tracker).")
                                 
+                        # 🛡️ بناء البطاقات برمجياً بسطر واحد متصل لمنع تسرب الأكواد!
                         cards_html = "<div class='vip-container'>"
                         for _, row in df_vip.iterrows():
-                            card = "<div class='vip-card'><div class='vip-crown'>👑</div><div class='vip-title'>" + str(row['الشركة']) + "</div><div class='vip-time'>⏱️ وقت الدخول: " + str(row['raw_time']) + "</div><div class='vip-price'>" + f"{row['السعر']:.2f}" + " <span style='font-size:16px; color:#aaa; font-weight:normal;'>" + currency + "</span></div><div class='vip-details'><div>الهدف 🎯<br><span class='vip-target'>" + str(row['الهدف 🎯']) + "</span></div><div>الوقف 🛡️<br><span class='vip-stop'>" + str(row['الوقف 🛡️']) + "</span></div></div><div style='margin-bottom: 15px;'>" + str(row['الحالة اللحظية ⚡']) + "</div><div class='vip-score'>التقييم: " + str(row['raw_score']) + "/100</div></div>"
+                            card = "<div class='vip-card'><div class='vip-crown'>👑</div><div class='vip-title'>" + str(row['الشركة']) + "</div><div class='vip-time'>⏱️ " + str(row['raw_time']) + "</div><div class='vip-price'>" + f"{row['السعر']:.2f}" + " <span style='font-size:16px; color:#aaa; font-weight:normal;'>" + currency + "</span></div><div class='vip-details'><div>الهدف 🎯<br><span class='vip-target'>" + str(row['الهدف 🎯']) + "</span></div><div>الوقف 🛡️<br><span class='vip-stop'>" + str(row['الوقف 🛡️']) + "</span></div></div><div style='margin-bottom: 15px;'>" + str(row['الحالة اللحظية ⚡']) + "</div><div class='vip-score'>التقييم: " + str(row['raw_score']) + "/100</div></div>"
                             cards_html += card
                         cards_html += "</div>"
                         
                         st.markdown(cards_html, unsafe_allow_html=True)
                     else:
-                        st.markdown("<div class='vip-empty'>👑 الصندوق مغلق حالياً!<br>لا يوجد أسهم في السوق اليوم تحقق الشروط القاسية. الحفاظ على الكاش هو الأفضل الآن.</div>", unsafe_allow_html=True)
+                        st.markdown("<div class='vip-empty'>👑 الصندوق مغلق حالياً!<br>لا يوجد أسهم في السوق اليوم تحقق الشروط القاسية (سكور +80 وزخم سيولة عالي). الحفاظ على الكاش هو الأفضل الآن.</div>", unsafe_allow_html=True)
                 else:
                     st.markdown("<div class='vip-empty'>قم بمسح السوق أولاً لعرض فرص VIP.</div>", unsafe_allow_html=True)
 
             # ==========================================
-            # 📂 2. قسم مراقبة الأداء (Tracker)
+            # 📂 2. قسم مراقبة الأداء (Tracker) والمحفظة الوهمية
             # ==========================================
             with tab_track:
                 st.markdown("<h3 style='text-align: center; color: #00d2ff; font-weight: bold;'>📂 محفظة المراقبة (Paper Trading)</h3>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center; color: gray;'>احفظ أسهم VIP هنا لمراقبة أدائها. اضغط (تحديث الأسعار) لمعرفة دقة التوصيات ونسبة الربح/الخسارة.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: gray;'>احفظ أسهم VIP هنا لمراقبة أدائها، واضغط (تحديث الأسعار) لمعرفة دقة التوصيات ونسبة الربح/الخسارة لاحقاً.</p>", unsafe_allow_html=True)
                 
                 if os.path.exists(TRACKER_FILE):
                     df_track = pd.read_csv(TRACKER_FILE)
+                    
                     if not df_track.empty:
+                        # 🔄 زر تحديث الأسعار اللحظي لحساب الأرباح
                         if st.button("🔄 تحديث الأسعار وحساب الربح/الخسارة 📊", type="primary", use_container_width=True):
                             with st.spinner("جاري جلب الأسعار اللحظية من السوق..."):
                                 current_prices = []
                                 pnl_list = []
                                 status_list = []
+                                
                                 for idx, row in df_track.iterrows():
                                     try:
                                         ticker_sym = row['الرمز']
@@ -642,7 +646,7 @@ if analyze_btn or ticker:
                                     if val > 0: return 'color: #00E676; font-weight: bold;'
                                     elif val < 0: return 'color: #FF5252; font-weight: bold;'
                                     return ''
-                                    
+                                
                                 def format_pct(x):
                                     if pd.isna(x): return ""
                                     return f"+{x:.2f}%" if x > 0 else f"{x:.2f}%"
@@ -653,10 +657,10 @@ if analyze_btn or ticker:
                             df_disp = df_track.drop(columns=['Date_Only', 'الرمز'], errors='ignore').iloc[::-1]
                             st.dataframe(df_disp, use_container_width=True, hide_index=True)
                             
-                        col_dl, col_del = st.columns(2)
-                        with col_dl:
+                        col_down, col_del = st.columns(2)
+                        with col_down:
                             csv_data = df_track.to_csv(index=False).encode('utf-8-sig')
-                            st.download_button("📥 تصدير السجل (Excel)", data=csv_data, file_name='Masa_Tracker.csv', mime='text/csv', use_container_width=True)
+                            st.download_button("📥 تصدير السجل (Excel)", data=csv_data, file_name='Masa_PaperTrading.csv', mime='text/csv', use_container_width=True)
                         with col_del:
                             if st.button("🗑️ مسح السجل بالكامل", use_container_width=True):
                                 os.remove(TRACKER_FILE)
@@ -667,7 +671,7 @@ if analyze_btn or ticker:
                     st.info("لم تقم بحفظ أي صفقات للمراقبة حتى الآن. اذهب لقسم VIP واضغط زر الحفظ عندما تظهر الفرص.")
 
             # ==========================================
-            # 🧠 3. لوحة التوصيات
+            # 🧠 3. لوحة التوصيات الشاملة
             # ==========================================
             with tab_ai:
                 col_ai_main, col_ai_reports = st.columns([2.5, 1.2])

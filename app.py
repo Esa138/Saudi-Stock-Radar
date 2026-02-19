@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V51 Institutional", layout="wide", page_icon="💎", initial_sidebar_state="expanded")
+st.set_page_config(page_title="منصة ماسة 💎 | V52 Institutional", layout="wide", page_icon="💎", initial_sidebar_state="expanded")
 
 DB_FILE = "masa_database.db"
 
@@ -309,113 +309,116 @@ def scan_market_async(watchlist_list):
             if df is not None: histories[tk] = df
 
     for tk in watchlist_list:
-        df_s = histories.get(tk)
-        if df_s is not None:
-            c, h, l, vol = df_s['Close'], df_s['High'], df_s['Low'], df_s['Volume']
-            stock_name = get_stock_name(tk)
-            
-            ma50 = c.rolling(50).mean()
-            ma200 = c.rolling(200).mean() if len(c) >= 200 else c.rolling(50).mean()
-            v_sma20, v_sma10 = vol.rolling(20).mean(), vol.rolling(10).mean()
-            
-            h3, l3 = h.rolling(3).max().shift(1), l.rolling(3).min().shift(1)
-            h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
-            h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
-            zr_window = 300 if len(c) >= 300 else len(c) - 2
-            zr_h, zr_l = h.rolling(zr_window, min_periods=10).max().shift(1), l.rolling(zr_window, min_periods=10).min().shift(1)
-            
-            up_diff, down_diff = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
-            rsi = 100 - (100 / (1 + (up_diff.ewm(com=13, adjust=False).mean() / down_diff.ewm(com=13, adjust=False).mean())))
-            
-            last_c, prev_c, prev2_c = c.iloc[-1], c.iloc[-2], c.iloc[-3]
-            last_vol, avg_vol, avg_vol_10 = vol.iloc[-1], v_sma20.iloc[-1], v_sma10.iloc[-1]
-            vol_ratio = last_vol / avg_vol if avg_vol > 0 else 1
-            vol_accel_ratio = last_vol / avg_vol_10 if avg_vol_10 > 0 else 1
+        try: # 🛡️ إضافة الكلمة المفقودة هنا!
+            df_s = histories.get(tk)
+            if df_s is not None:
+                c, h, l, vol = df_s['Close'], df_s['High'], df_s['Low'], df_s['Volume']
+                stock_name = get_stock_name(tk)
+                
+                ma50 = c.rolling(50).mean()
+                ma200 = c.rolling(200).mean() if len(c) >= 200 else c.rolling(50).mean()
+                v_sma20, v_sma10 = vol.rolling(20).mean(), vol.rolling(10).mean()
+                
+                h3, l3 = h.rolling(3).max().shift(1), l.rolling(3).min().shift(1)
+                h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
+                h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
+                zr_window = 300 if len(c) >= 300 else len(c) - 2
+                zr_h, zr_l = h.rolling(zr_window, min_periods=10).max().shift(1), l.rolling(zr_window, min_periods=10).min().shift(1)
+                
+                up_diff, down_diff = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
+                rsi = 100 - (100 / (1 + (up_diff.ewm(com=13, adjust=False).mean() / down_diff.ewm(com=13, adjust=False).mean())))
+                
+                last_c, prev_c, prev2_c = c.iloc[-1], c.iloc[-2], c.iloc[-3]
+                last_vol, avg_vol, avg_vol_10 = vol.iloc[-1], v_sma20.iloc[-1], v_sma10.iloc[-1]
+                vol_ratio = last_vol / avg_vol if avg_vol > 0 else 1
+                vol_accel_ratio = last_vol / avg_vol_10 if avg_vol_10 > 0 else 1
 
-            diff = c.diff()
-            direction = np.where(diff > 0, 1, np.where(diff < 0, -1, 0))
-            counter = 0; counters = []
-            for d in direction:
-                if d == 1: counter = counter + 1 if counter > 0 else 1
-                elif d == -1: counter = counter - 1 if counter < 0 else -1
-                else: counter = 0
-                counters.append(counter)
-            cur_count = counters[-1]
-            
-            if cur_count > 0: recent_up.append({"السهم": stock_name, "تاريخ": today_str, "منذ كم صف": cur_count})
-            elif cur_count < 0: recent_down.append({"السهم": stock_name, "تاريخ": today_str, "منذ كم صف": abs(cur_count)})
+                diff = c.diff()
+                direction = np.where(diff > 0, 1, np.where(diff < 0, -1, 0))
+                counter = 0; counters = []
+                for d in direction:
+                    if d == 1: counter = counter + 1 if counter > 0 else 1
+                    elif d == -1: counter = counter - 1 if counter < 0 else -1
+                    else: counter = 0
+                    counters.append(counter)
+                cur_count = counters[-1]
+                
+                if cur_count > 0: recent_up.append({"السهم": stock_name, "تاريخ": today_str, "منذ كم صف": cur_count})
+                elif cur_count < 0: recent_down.append({"السهم": stock_name, "تاريخ": today_str, "منذ كم صف": abs(cur_count)})
 
-            pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
-            pct_3d = (last_c / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
-            pct_5d = (last_c / c.iloc[-6] - 1) * 100 if len(c)>5 else 0
-            pct_10d = (last_c / c.iloc[-11] - 1) * 100 if len(c)>10 else 0
+                pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
+                pct_3d = (last_c / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
+                pct_5d = (last_c / c.iloc[-6] - 1) * 100 if len(c)>5 else 0
+                pct_10d = (last_c / c.iloc[-11] - 1) * 100 if len(c)>10 else 0
 
-            cat_1d, cat_3d, cat_5d, cat_10d = get_cat(pct_1d), get_cat(pct_3d), get_cat(pct_5d), get_cat(pct_10d)
-            
-            loads_list.append({
-                "الشركة": stock_name, "التاريخ": today_str, "الاتجاه": int(cur_count), "أيام": abs(cur_count), 
-                "تغير 1 يوم": pct_1d, "1d_cat": cat_1d, "تراكمي 3 أيام": pct_3d, "3d_cat": cat_3d, 
-                "تراكمي 5 أيام": pct_5d, "5d_cat": cat_5d, "تراكمي 10 أيام": pct_10d, "10d_cat": cat_10d,
-                "حالة 3 أيام": "✅" if pct_3d > 0 else "❌", "حالة 5 أيام": "✅" if pct_5d > 0 else "❌", "حالة 10 أيام": "✅" if pct_10d > 0 else "❌"
-            })
+                cat_1d, cat_3d, cat_5d, cat_10d = get_cat(pct_1d), get_cat(pct_3d), get_cat(pct_5d), get_cat(pct_10d)
+                
+                loads_list.append({
+                    "الشركة": stock_name, "التاريخ": today_str, "الاتجاه": int(cur_count), "أيام": abs(cur_count), 
+                    "تغير 1 يوم": pct_1d, "1d_cat": cat_1d, "تراكمي 3 أيام": pct_3d, "3d_cat": cat_3d, 
+                    "تراكمي 5 أيام": pct_5d, "5d_cat": cat_5d, "تراكمي 10 أيام": pct_10d, "10d_cat": cat_10d,
+                    "حالة 3 أيام": "✅" if pct_3d > 0 else "❌", "حالة 5 أيام": "✅" if pct_5d > 0 else "❌", "حالة 10 أيام": "✅" if pct_10d > 0 else "❌"
+                })
 
-            bo_today, bd_today = [], []
-            if last_c > h3.iloc[-1] and prev_c <= h3.iloc[-2]: bo_today.append("3أيام"); alerts_list.append({"الشركة": stock_name, "التاريخ": full_time_str, "التنبيه": "اختراق 3 أيام 🟢"})
-            if last_c > h4.iloc[-1] and prev_c <= h4.iloc[-2]: bo_today.append("4أيام")
-            if last_c > h10.iloc[-1] and prev_c <= h10.iloc[-2]: bo_today.append("10أيام")
-            if bo_today: breakouts.append({"السهم": stock_name, "التاريخ": today_str, "النوع": "+".join(bo_today)})
+                bo_today, bd_today = [], []
+                if last_c > h3.iloc[-1] and prev_c <= h3.iloc[-2]: bo_today.append("3أيام"); alerts_list.append({"الشركة": stock_name, "التاريخ": full_time_str, "التنبيه": "اختراق 3 أيام 🟢"})
+                if last_c > h4.iloc[-1] and prev_c <= h4.iloc[-2]: bo_today.append("4أيام")
+                if last_c > h10.iloc[-1] and prev_c <= h10.iloc[-2]: bo_today.append("10أيام")
+                if bo_today: breakouts.append({"السهم": stock_name, "التاريخ": today_str, "النوع": "+".join(bo_today)})
 
-            if last_c < l3.iloc[-1] and prev_c >= l3.iloc[-2]: bd_today.append("3أيام"); alerts_list.append({"الشركة": stock_name, "التاريخ": full_time_str, "التنبيه": "كسر 3 أيام 🔴"})
-            if last_c < l4.iloc[-1] and prev_c >= l4.iloc[-2]: bd_today.append("4أيام")
-            if last_c < l10.iloc[-1] and prev_c >= l10.iloc[-2]: bd_today.append("10أيام")
-            if bd_today: breakdowns.append({"السهم": stock_name, "التاريخ": today_str, "النوع": "+".join(bd_today)})
+                if last_c < l3.iloc[-1] and prev_c >= l3.iloc[-2]: bd_today.append("3أيام"); alerts_list.append({"الشركة": stock_name, "التاريخ": full_time_str, "التنبيه": "كسر 3 أيام 🔴"})
+                if last_c < l4.iloc[-1] and prev_c >= l4.iloc[-2]: bd_today.append("4أيام")
+                if last_c < l10.iloc[-1] and prev_c >= l10.iloc[-2]: bd_today.append("10أيام")
+                if bd_today: breakdowns.append({"السهم": stock_name, "التاريخ": today_str, "النوع": "+".join(bd_today)})
 
-            bo_yest, bd_yest = [], []
-            if prev_c > h3.iloc[-2] and prev2_c <= h3.iloc[-3]: bo_yest.append("3أيام")
-            if prev_c < l3.iloc[-2] and prev2_c >= l3.iloc[-3]: bd_yest.append("3أيام")
+                bo_yest, bd_yest = [], []
+                if prev_c > h3.iloc[-2] and prev2_c <= h3.iloc[-3]: bo_yest.append("3أيام")
+                if prev_c < l3.iloc[-2] and prev2_c >= l3.iloc[-3]: bd_yest.append("3أيام")
 
-            events = []
-            bo_score_add = 0
-            if pct_1d > 0 and vol_accel_ratio > 1.2: events.append("تسارع سيولة 🌊🔥"); bo_score_add += 10
-            if bo_today: events.append(f"اختراق 🚀 ({'+'.join(bo_today)})"); bo_score_add += 15
-            elif bd_today: events.append(f"كسر 🩸 ({'+'.join(bd_today)})"); bo_score_add -= 20
-            elif bo_yest and last_c > h3.iloc[-1]: events.append("اختراق سابق 🟢"); bo_score_add += 10
-            elif bd_yest and last_c < l3.iloc[-1]: events.append("كسر سابق 🔴"); bo_score_add -= 15
-            else:
-                dist_m50 = ((last_c - ma50.iloc[-1])/ma50.iloc[-1]) * 100 if pd.notna(ma50.iloc[-1]) else 100
-                if 0 <= dist_m50 <= 2.5 and cur_count > 0: events.append("ارتداد MA50 💎"); bo_score_add += 10
-                elif -2.5 <= dist_m50 < 0 and cur_count < 0: events.append("كسر MA50 ⚠️"); bo_score_add -= 15
+                events = []
+                bo_score_add = 0
+                if pct_1d > 0 and vol_accel_ratio > 1.2: events.append("تسارع سيولة 🌊🔥"); bo_score_add += 10
+                if bo_today: events.append(f"اختراق 🚀 ({'+'.join(bo_today)})"); bo_score_add += 15
+                elif bd_today: events.append(f"كسر 🩸 ({'+'.join(bd_today)})"); bo_score_add -= 20
+                elif bo_yest and last_c > h3.iloc[-1]: events.append("اختراق سابق 🟢"); bo_score_add += 10
+                elif bd_yest and last_c < l3.iloc[-1]: events.append("كسر سابق 🔴"); bo_score_add -= 15
+                else:
+                    dist_m50 = ((last_c - ma50.iloc[-1])/ma50.iloc[-1]) * 100 if pd.notna(ma50.iloc[-1]) else 100
+                    if 0 <= dist_m50 <= 2.5 and cur_count > 0: events.append("ارتداد MA50 💎"); bo_score_add += 10
+                    elif -2.5 <= dist_m50 < 0 and cur_count < 0: events.append("كسر MA50 ⚠️"); bo_score_add -= 15
 
-            if not events:
-                if cur_count > 1: events.append(f"مسار صاعد ({cur_count} أيام) 📈"); bo_score_add += 5
-                elif cur_count < -1: events.append(f"مسار هابط ({abs(cur_count)} أيام) 📉"); bo_score_add -= 5
-                else: events.append("استقرار ➖")
+                if not events:
+                    if cur_count > 1: events.append(f"مسار صاعد ({cur_count} أيام) 📈"); bo_score_add += 5
+                    elif cur_count < -1: events.append(f"مسار هابط ({abs(cur_count)} أيام) 📉"); bo_score_add -= 5
+                    else: events.append("استقرار ➖")
 
-            event_text = " | ".join(events)
-            bg_color, text_color, border_color = "transparent", "gray", "gray"
-            if any(x in event_text for x in ["🚀", "🟢", "💎", "📈", "🔥"]): bg_color, text_color, border_color = "rgba(0, 230, 118, 0.12)", "#00E676", "rgba(0, 230, 118, 0.5)"
-            elif any(x in event_text for x in ["🩸", "🔴", "🛑", "📉"]): bg_color, text_color, border_color = "rgba(255, 82, 82, 0.12)", "#FF5252", "rgba(255, 82, 82, 0.5)"
-            elif "⚠️" in event_text: bg_color, text_color, border_color = "rgba(255, 215, 0, 0.12)", "#FFD700", "rgba(255, 215, 0, 0.5)"
-            
-            ch_badge = f"<span class='bo-badge' style='background-color:{bg_color}; color:{text_color}; border: 1px solid {border_color};'>{event_text}</span>"
+                event_text = " | ".join(events)
+                bg_color, text_color, border_color = "transparent", "gray", "gray"
+                if any(x in event_text for x in ["🚀", "🟢", "💎", "📈", "🔥"]): bg_color, text_color, border_color = "rgba(0, 230, 118, 0.12)", "#00E676", "rgba(0, 230, 118, 0.5)"
+                elif any(x in event_text for x in ["🩸", "🔴", "🛑", "📉"]): bg_color, text_color, border_color = "rgba(255, 82, 82, 0.12)", "#FF5252", "rgba(255, 82, 82, 0.5)"
+                elif "⚠️" in event_text: bg_color, text_color, border_color = "rgba(255, 215, 0, 0.12)", "#FFD700", "rgba(255, 215, 0, 0.5)"
+                
+                ch_badge = f"<span class='bo-badge' style='background-color:{bg_color}; color:{text_color}; border: 1px solid {border_color};'>{event_text}</span>"
 
-            target = zr_h.iloc[-1] if pd.notna(zr_h.iloc[-1]) else last_c * 1.05
-            sl = ma50.iloc[-1] if pd.notna(ma50.iloc[-1]) else last_c * 0.95
-            if last_c < sl: sl = l3.iloc[-1] if pd.notna(l3.iloc[-1]) else last_c * 0.90
+                target = zr_h.iloc[-1] if pd.notna(zr_h.iloc[-1]) else last_c * 1.05
+                sl = ma50.iloc[-1] if pd.notna(ma50.iloc[-1]) else last_c * 0.95
+                if last_c < sl: sl = l3.iloc[-1] if pd.notna(l3.iloc[-1]) else last_c * 0.90
 
-            mom_score = calc_momentum_score(pct_1d, pct_5d, pct_10d, vol_ratio)
-            mom_badge = get_mom_badge(mom_score)
-            ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d)
-            
-            ai_picks.append({"الشركة": stock_name, "الرمز": tk, "السعر": round(last_c, 2), "Score 💯": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "التوصية 🚦": ai_dec, "وقت الدخول 🕒": f"<span style='color:#aaa; font-size:12px;'>{time_str}</span>", "اللون": ai_col, "raw_score": ai_score, "raw_mom": mom_score, "raw_events": event_text, "raw_time": full_time_str, "raw_target": target, "raw_sl": sl})
+                mom_score = calc_momentum_score(pct_1d, pct_5d, pct_10d, vol_ratio)
+                mom_badge = get_mom_badge(mom_score)
+                ai_score, ai_dec, ai_col, _ = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d)
+                
+                ai_picks.append({"الشركة": stock_name, "الرمز": tk, "السعر": round(last_c, 2), "Score 💯": ai_score, "الزخم 🌊": mom_badge, "الحالة اللحظية ⚡": ch_badge, "الهدف 🎯": f"{target:.2f}", "الوقف 🛡️": f"{sl:.2f}", "التوصية 🚦": ai_dec, "وقت الدخول 🕒": f"<span style='color:#aaa; font-size:12px;'>{time_str}</span>", "اللون": ai_col, "raw_score": ai_score, "raw_mom": mom_score, "raw_events": event_text, "raw_time": full_time_str, "raw_target": target, "raw_sl": sl})
 
-        except Exception as e: continue
+        except Exception as e: 
+            continue # 🛡️ الآن هذه الجملة محمية وستعمل بدون أي Syntax Error!
+
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
 # 🌟 5. واجهة المستخدم
 # ==========================================
-st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v51 (Institutional)</span></h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00d2ff; font-weight: bold;'>💎 منصة مـاسـة للتحليل الكمي <span style='font-size:16px; color:#555;'>v52 (Institutional)</span></h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray; margin-top: -10px; margin-bottom: 30px;'>مستشارك الآلي الخوارزمي | إدارة المحافظ والتنبيهات 🇸🇦🇺🇸</p>", unsafe_allow_html=True)
 
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
@@ -489,6 +492,7 @@ if analyze_btn or ticker:
             last_vol = df['Volume'].iloc[-1]
             avg_vol, avg_vol10 = vol.rolling(window=20).mean().iloc[-1], vol.rolling(window=10).mean().iloc[-1]
             last_zr_high, last_zr_low = df['ZR_High'].iloc[-1], df['ZR_Low'].iloc[-1]
+            last_rsi, last_counter = df['RSI'].iloc[-1], df['Counter'].iloc[-1]
             
             main_vol_ratio = last_vol / avg_vol if avg_vol > 0 else 1
             main_vol_accel_ratio = last_vol / avg_vol10 if avg_vol10 > 0 else 1
@@ -539,6 +543,14 @@ if analyze_btn or ticker:
                                 pos_value = shares * row['السعر']
                             else: shares, pos_value = 0, 0
                             
+                            alert_id = f"{today_str}_{row['الرمز']}"
+                            if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
+                                msg = f"🚨 <b>Masa VIP Alert!</b> 💎\n\n📌 <b>Stock:</b> {row['الشركة']} ({row['الرمز']})\n💰 <b>Price:</b> {row['السعر']}\n🎯 <b>Target:</b> {row['raw_target']:.2f}\n🛡️ <b>SL:</b> {row['raw_sl']:.2f}\n⚖️ <b>Max Shares:</b> {shares}\n\n🤖 <i>Masa Quant System V52</i>"
+                                try:
+                                    requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "HTML"})
+                                    st.session_state.tg_sent.add(alert_id)
+                                except: pass
+
                             card = f"<div class='vip-card'><div class='vip-crown'>👑</div><div class='vip-title'>{row['الشركة']}</div><div class='vip-time'>⏱️ {str(row['raw_time']).split(' | ')[-1]}</div><div class='vip-price'>{row['السعر']:.2f} <span style='font-size:16px; color:#aaa; font-weight:normal;'>{currency}</span></div><div class='vip-details'><div>الهدف 🎯<br><span class='vip-target'>{row['الهدف 🎯']}</span></div><div>الوقف 🛡️<br><span class='vip-stop'>{row['الوقف 🛡️']}</span></div></div><div style='margin-bottom: 15px;'>{row['الحالة اللحظية ⚡']}</div><div style='background:rgba(33,150,243,0.1); padding:10px; border-radius:8px; border:1px solid rgba(33,150,243,0.3); font-size:14px; margin-bottom:15px; color:#00d2ff;'>📦 الكمية الآمنة: <b>{shares:,} سهم</b><br>💵 التكلفة: <b>{pos_value:,.2f} {currency}</b></div><div class='vip-score'>التقييم: {row['raw_score']}/100</div></div>"
                             cards_html += card
                         cards_html += "</div>"
@@ -597,7 +609,6 @@ if analyze_btn or ticker:
                                 c3.metric("نسبة النجاح (Win Rate)", f"{win_rate:.1f}%")
                                 c4.metric("صافي الأرباح التراكمية", f"🟢 +{total_pnl:.1f}%" if total_pnl > 0 else f"🔴 {total_pnl:.1f}%")
                                 
-                                # 💎 التنسيق الاحترافي لجدول الباك تيست
                                 df_disp_bt = df_trades.copy()
                                 df_disp_bt['سعر الدخول'] = df_disp_bt['سعر الدخول'].apply(lambda x: f"{x:.2f}")
                                 df_disp_bt['سعر الخروج'] = df_disp_bt['سعر الخروج'].apply(lambda x: f"{x:.2f}")

@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V56 Institutional", layout="wide", page_icon="💎")
+st.set_page_config(page_title="منصة ماسة 💎 | V58 Institutional", layout="wide", page_icon="💎")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V56</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V58</span>
     </div>
 </div>
 """
@@ -304,12 +304,17 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
         df.columns = df.columns.get_level_values(0)
     return df
 
-# 🚀 تم تغيير الاسم لضمان مسح الكاش، وتم تصحيح التوصيلات 100%
+# 🚀 V58: استعادة التوقيت المفقود وتخفيض السرعة لمنع الحظر المؤقت
 @st.cache_data(ttl=1800)
-def scan_market_v56(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي"):
+def scan_market_v58(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
-    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    
+    # 🛡️ استعادة المتغيرات المفقودة هنا لتجنب خطأ NameError
+    saudi_tz_internal = datetime.timezone(datetime.timedelta(hours=3))
+    now_internal = datetime.datetime.now(saudi_tz_internal)
+    today_str_internal = now_internal.strftime("%Y-%m-%d")
+    full_time_str = now_internal.strftime("%Y-%m-%d | %I:%M %p") 
     
     col_change = "تغير 1 يوم" if interval == "1d" else "تغير 1 شمعة"
     col_count = "عدد الأيام" if interval == "1d" else "عدد الشموع"
@@ -320,11 +325,11 @@ def scan_market_v56(watchlist_list, period="1y", interval="1d", lbl="أيام", 
             df = yf.Ticker(tk).history(period=period, interval=interval)
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
-            if len(df) > 50: return tk, df
+            if len(df) > 30: return tk, df
         except: pass
         return tk, None
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(fetch_data, tk) for tk in watchlist_list]
         for future in as_completed(futures):
             tk, df = future.result()
@@ -365,7 +370,10 @@ def scan_market_v56(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                     counters.append(counter)
                 cur_count = counters[-1]
                 
-                candle_time = df_s.index[-1].strftime("%Y-%m-%d %H:%M") if interval != "1d" else today_str
+                try:
+                    candle_time = df_s.index[-1].strftime("%Y-%m-%d %H:%M") if interval != "1d" else today_str_internal
+                except:
+                    candle_time = today_str_internal
 
                 pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
                 pct_3d = (last_c / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
@@ -374,7 +382,6 @@ def scan_market_v56(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 cat_1d, cat_3d, cat_5d, cat_10d = get_cat(pct_1d), get_cat(pct_3d), get_cat(pct_5d), get_cat(pct_10d)
                 
-                # 🛡️ ضمان استخدام المتغير lbl فقط بدلاً من الكلمات الثابتة المسببة للخطأ
                 loads_list.append({
                     "الشركة": stock_name, "التاريخ": candle_time, "الاتجاه": int(cur_count), col_count: abs(cur_count), 
                     col_change: pct_1d, "1d_cat": cat_1d, f"تراكمي 3 {lbl}": pct_3d, "3d_cat": cat_3d, 
@@ -444,8 +451,9 @@ with col_m1:
 with col_m2:
     tf_choice = st.radio("⏳ الفاصل الزمني:", ["يومي (1D)", "ساعة (60m)", "15 دقيقة (15m)"], horizontal=True)
 
+# 🛡️ تخفيف فترات اللحظي لتجنب حظر Yahoo المزعج
 interval_map = {"يومي (1D)": "1d", "ساعة (60m)": "60m", "15 دقيقة (15m)": "15m"}
-period_map = {"1d": "2y", "60m": "6mo", "15m": "60d"}
+period_map = {"1d": "2y", "60m": "3mo", "15m": "1mo"} 
 selected_interval = interval_map[tf_choice]
 selected_period = period_map[selected_interval]
 tf_label_name = tf_choice.replace(" (1D)", "").replace(" (60m)", "").replace(" (15m)", "")
@@ -483,14 +491,17 @@ if analyze_btn or ticker:
         if df.empty: 
             st.error("❌ لا توجد بيانات كافية لهذا السهم على هذا الفاصل الزمني!")
         else:
-            # 🛡️ استدعاء المحرك مع التمرير الصريح والدقيق للمتغيرات
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v56(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v58(
                 watchlist_list=selected_watchlist, 
                 period=selected_period, 
                 interval=selected_interval, 
                 lbl=lbl, 
                 tf_label=tf_label_name
             )
+            
+            # مسح الكاش إذا كانت النتيجة فارغة تماما بسبب حظر مؤقت من ياهو فاينانس
+            if df_loads.empty:
+                st.cache_data.clear()
 
             close, high, low, vol = df['Close'], df['High'], df['Low'], df['Volume']
             df['SMA_50'] = close.rolling(window=50).mean()
@@ -580,7 +591,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Stock:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['raw_target']:.2f}\n🛡️ *SL:* {row['raw_sl']:.2f}\n⚖️ *Max Shares:* {shares}\n\n🤖 _Masa Quant System V56_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Stock:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['raw_target']:.2f}\n🛡️ *SL:* {row['raw_sl']:.2f}\n⚖️ *Max Shares:* {shares}\n\n🤖 _Masa Quant System V58_"
                                 try:
                                     requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"})
                                     st.session_state.tg_sent.add(alert_id)
@@ -590,8 +601,9 @@ if analyze_btn or ticker:
                             cards_html += card
                         cards_html += "</div>"
                         st.markdown(cards_html, unsafe_allow_html=True)
-                    else: st.markdown(f"<div class='vip-empty'>👑 الصندوق مغلق حالياً!<br>لا يوجد أسهم تحقق الشروط القاسية على فريم {tf_label_name}.</div>", unsafe_allow_html=True)
-                else: st.markdown("<div class='vip-empty'>قم بمسح السوق أولاً لعرض فرص VIP.</div>", unsafe_allow_html=True)
+                    else: st.markdown(f"<div class='empty-box'>👑 الصندوق مغلق حالياً!<br><br>لم تتطابق أي أسهم مع شروط الخوارزمية الصارمة على فريم ({tf_label_name}).<br><span style='font-size:13px; color:#555;'>الحفاظ على الكاش في أوقات التذبذب هو أفضل استراتيجية.</span></div>", unsafe_allow_html=True)
+                else: 
+                    st.markdown("<div class='empty-box'>السوق لا يحتوي على فرص حالياً. إذا كنت تعتقد أن هناك خطأ، جرب المحاولة بعد قليل.</div>", unsafe_allow_html=True)
 
             # ==========================================
             # ⏳ 2. الباك تيست
@@ -710,7 +722,7 @@ if analyze_btn or ticker:
                 else: st.info("لم تقم بحفظ أي صفقات.")
 
             # ==========================================
-            # 🧠 4. لوحة التوصيات
+            # 🧠 4. لوحة التوصيات (التحديث الذكي) 💡
             # ==========================================
             with tab_ai:
                 if not df_ai_picks.empty:
@@ -720,6 +732,8 @@ if analyze_btn or ticker:
                         html_ai += f"<tr><td style='color:#00d2ff; font-weight:bold; font-size:15px;'>{row['الشركة']}</td><td>{row['السعر']:.2f}</td><td style='color:{row['اللون']}; font-size:18px; font-weight:bold;'>{row['Score 💯']}/100</td><td>{row['الزخم 🌊']}</td><td>{row['الحالة اللحظية ⚡']}</td><td>{row['وقت الدخول 🕒']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']};'><span class='rec-badge' style='background-color:{row['اللون']}20; border:1px solid {row['اللون']}50;'>{row['التوصية 🚦']}</span></td></tr>"
                     html_ai += "</table>"
                     st.markdown(html_ai, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<div class='empty-box'>📉 لا توجد أسهم حققت شروط التوصيات الإيجابية على فريم [{tf_label_name}] حالياً. يرجى تغيير الفاصل الزمني أو الانتظار.</div>", unsafe_allow_html=True)
 
             # ==========================================
             # 🎯 5. شارت الاختراقات
@@ -754,28 +768,22 @@ if analyze_btn or ticker:
                 st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
             # ==========================================
-            # 🗂️ 6. ماسح السوق (الدرع الفولاذي 🛡️)
+            # 🗂️ 6. ماسح السوق
             # ==========================================
             with tab5:
                 if not df_loads.empty:
                     df_loads_styled = pd.DataFrame(df_loads).copy()
-                    
-                    # 🛡️ الحماية الاستباقية: نتأكد من وجود الأعمدة قبل محاولة تلوينها
                     try:
                         if col_change_name in df_loads_styled.columns and '1d_cat' in df_loads_styled.columns:
                             df_loads_styled[col_change_name] = df_loads_styled.apply(lambda x: format_cat(x[col_change_name], x['1d_cat']), axis=1)
-                        
                         if f'تراكمي 3 {lbl}' in df_loads_styled.columns and '3d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 3 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 3 {lbl}'], x['3d_cat']), axis=1)
-                        
                         if f'تراكمي 5 {lbl}' in df_loads_styled.columns and '5d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 5 {lbl}'], x['5d_cat']), axis=1)
-                        
                         if f'تراكمي 10 {lbl}' in df_loads_styled.columns and '10d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 10 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 10 {lbl}'], x['10d_cat']), axis=1)
                         
                         df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
-                        
                         subset_cols = [c for c in [col_change_name, f'حالة 3 {lbl}', f'تراكمي 3 {lbl}', f'حالة 5 {lbl}', f'تراكمي 5 {lbl}', f'حالة 10 {lbl}', f'تراكمي 10 {lbl}'] if c in df_loads_styled.columns]
                         
                         if subset_cols:
@@ -784,9 +792,10 @@ if analyze_btn or ticker:
                         else:
                             st.dataframe(df_loads_styled.astype(str), use_container_width=True, height=550, hide_index=True)
                     except Exception as e:
-                        # في حالة وجود أي خطأ بالذاكرة، نعرض الجدول بدون تلوين بدلاً من انهيار المنصة
                         df_safe = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
                         st.dataframe(df_safe.astype(str), use_container_width=True, height=550, hide_index=True)
+                else:
+                    st.markdown("<div class='empty-box'>📭 لا توجد بيانات.</div>", unsafe_allow_html=True)
 
             # ==========================================
             # 🚨 7. التنبيهات
@@ -799,6 +808,8 @@ if analyze_btn or ticker:
                         st.dataframe(styler_alerts, use_container_width=True, height=550, hide_index=True)
                     else:
                         st.dataframe(df_alerts_disp.astype(str), use_container_width=True, height=550, hide_index=True)
+                else:
+                    st.markdown(f"<div class='empty-box'>لم يتم رصد أي اختراقات أو كسور في السوق على فريم ({tf_label_name}).</div>", unsafe_allow_html=True)
 
             with tab2:
                 tv_ticker = ticker.replace('.SR', '') if ticker.endswith('.SR') else ticker
@@ -828,12 +839,10 @@ if analyze_btn or ticker:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             # ==========================================
-            # 📋 8. جدول البيانات التفصيلي 🛡️
+            # 📋 8. جدول البيانات التفصيلي 
             # ==========================================
             with tab4:
                 df_display = df.copy()
-                
-                # نفس الدرع الاستباقي هنا لتجنب أي خطأ
                 try:
                     df_display['Load_Diff_1D'] = df_display['1d_%'].apply(lambda x: format_cat(x, get_cat(x)))
                     df_display['Load_Diff_3D'] = df_display['3d_%'].apply(lambda x: format_cat(x, get_cat(x)))

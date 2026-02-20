@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V55 Institutional", layout="wide", page_icon="💎")
+st.set_page_config(page_title="منصة ماسة 💎 | V56 Institutional", layout="wide", page_icon="💎")
 
 DB_FILE = "masa_database.db"
 
@@ -114,13 +114,12 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V55</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V56</span>
     </div>
 </div>
 """
 st.markdown(masa_logo_html, unsafe_allow_html=True)
 
-# تعريف التواريخ لمنع الأخطاء
 saudi_tz = datetime.timezone(datetime.timedelta(hours=3))
 now = datetime.datetime.now(saudi_tz)
 today_str = now.strftime("%Y-%m-%d")
@@ -128,9 +127,6 @@ today_str = now.strftime("%Y-%m-%d")
 if 'tg_sent' not in st.session_state:
     st.session_state.tg_sent = set()
 
-# ==========================================
-# ⚙️ لوحة التحكم والإعدادات العلوية
-# ==========================================
 with st.expander("⚙️ لوحة التحكم والإعدادات (المحفظة وتليجرام)", expanded=False):
     c_set1, c_set2 = st.columns(2)
     with c_set1:
@@ -142,7 +138,6 @@ with st.expander("⚙️ لوحة التحكم والإعدادات (المحف�
         tg_token = st.text_input("Bot Token (الصق توكن الروبوت هنا)", type="password")
         tg_chat = st.text_input("Chat ID (الصق رقم غرفتك هنا)")
 
-# القواميس
 SAUDI_NAMES = {
     '1010.SR': 'الرياض', '1020.SR': 'الجزيرة', '1030.SR': 'الاستثمار', '1050.SR': 'السعودي الفرنسي', '1060.SR': 'الأول', '1080.SR': 'العربي', '1111.SR': 'تداول', '1120.SR': 'الراجحي', '1140.SR': 'البلاد', '1150.SR': 'الإنماء', '1180.SR': 'الأهلي', '1182.SR': 'أملاك', '1183.SR': 'الموارد',
     '1201.SR': 'تكوين', '1202.SR': 'مبكو', '1211.SR': 'معادن', '1212.SR': 'أسترا الصناعية', '1213.SR': 'نسيج', '1214.SR': 'شاكر', '1301.SR': 'أسلاك', '1302.SR': 'بوان', '1303.SR': 'الصناعات الكهربائية', '1304.SR': 'اليمامة للحديد', '1320.SR': 'أنابيب السعودية', '1321.SR': 'أنابيب الشرق', '1322.SR': 'أنابيب',
@@ -309,8 +304,9 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
         df.columns = df.columns.get_level_values(0)
     return df
 
+# 🚀 تم تغيير الاسم لضمان مسح الكاش، وتم تصحيح التوصيلات 100%
 @st.cache_data(ttl=1800)
-def scan_market_async(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي"):
+def scan_market_v56(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -378,6 +374,7 @@ def scan_market_async(watchlist_list, period="1y", interval="1d", lbl="أيام"
 
                 cat_1d, cat_3d, cat_5d, cat_10d = get_cat(pct_1d), get_cat(pct_3d), get_cat(pct_5d), get_cat(pct_10d)
                 
+                # 🛡️ ضمان استخدام المتغير lbl فقط بدلاً من الكلمات الثابتة المسببة للخطأ
                 loads_list.append({
                     "الشركة": stock_name, "التاريخ": candle_time, "الاتجاه": int(cur_count), col_count: abs(cur_count), 
                     col_change: pct_1d, "1d_cat": cat_1d, f"تراكمي 3 {lbl}": pct_3d, "3d_cat": cat_3d, 
@@ -437,11 +434,10 @@ def scan_market_async(watchlist_list, period="1y", interval="1d", lbl="أيام"
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
-# 🌟 واجهة المستخدم الرئيسية
+# 🌟 الواجهة الرئيسية
 # ==========================================
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 
-# 🚀 تمت إعادة أزرار الفاصل الزمني هنا بوضوح تام بجوار اختيار السوق!
 col_m1, col_m2 = st.columns([1, 1])
 with col_m1:
     market_choice = st.radio("🌐 اختر نطاق الماسح الآلي:", ["السوق السعودي 🇸🇦", "السوق الأمريكي 🇺🇸"], horizontal=True)
@@ -454,7 +450,7 @@ selected_interval = interval_map[tf_choice]
 selected_period = period_map[selected_interval]
 tf_label_name = tf_choice.replace(" (1D)", "").replace(" (60m)", "").replace(" (15m)", "")
 lbl = "أيام" if selected_interval == "1d" else "شموع"
-col_change_name = 'تغير 1 شمعة' if selected_interval != '1d' else 'تغير 1 يوم'
+col_change_name = 'تغير 1 يوم' if selected_interval == '1d' else 'تغير 1 شمعة'
 
 col_empty1, col_search1, col_search2, col_empty2 = st.columns([1, 3, 1, 1])
 
@@ -487,7 +483,14 @@ if analyze_btn or ticker:
         if df.empty: 
             st.error("❌ لا توجد بيانات كافية لهذا السهم على هذا الفاصل الزمني!")
         else:
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_async(selected_watchlist, selected_period, selected_interval, tf_label_name)
+            # 🛡️ استدعاء المحرك مع التمرير الصريح والدقيق للمتغيرات
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v56(
+                watchlist_list=selected_watchlist, 
+                period=selected_period, 
+                interval=selected_interval, 
+                lbl=lbl, 
+                tf_label=tf_label_name
+            )
 
             close, high, low, vol = df['Close'], df['High'], df['Low'], df['Volume']
             df['SMA_50'] = close.rolling(window=50).mean()
@@ -577,7 +580,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Stock:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['raw_target']:.2f}\n🛡️ *SL:* {row['raw_sl']:.2f}\n⚖️ *Max Shares:* {shares}\n\n🤖 _Masa Quant System V55_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Stock:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['raw_target']:.2f}\n🛡️ *SL:* {row['raw_sl']:.2f}\n⚖️ *Max Shares:* {shares}\n\n🤖 _Masa Quant System V56_"
                                 try:
                                     requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"})
                                     st.session_state.tg_sent.add(alert_id)
@@ -591,7 +594,7 @@ if analyze_btn or ticker:
                 else: st.markdown("<div class='vip-empty'>قم بمسح السوق أولاً لعرض فرص VIP.</div>", unsafe_allow_html=True)
 
             # ==========================================
-            # ⏳ 2. الباك تيست (يعمل على اليومي دائماً لضمان الدقة)
+            # ⏳ 2. الباك تيست
             # ==========================================
             with tab_backtest:
                 st.markdown(f"<h3 style='text-align: center; color: #00d2ff; font-weight: bold;'>⏳ محرك الاختبار التاريخي لـ ({display_name})</h3>", unsafe_allow_html=True)
@@ -599,7 +602,6 @@ if analyze_btn or ticker:
                 
                 if st.button("🚀 تشغيل الباك تيست الآن", use_container_width=True):
                     with st.spinner("جاري السفر بالزمن ومحاكاة التداولات لـ 3 سنوات..."):
-                        # دائماً نحمل بيانات يومية للباك تيست لأنه الأدق ولتجنب قيود Yahoo Finance في اللحظي
                         df_bt = get_stock_data(ticker, period="3y", interval="1d")
                         if not df_bt.empty and len(df_bt) > 200:
                             df_bt['MA50'] = df_bt['Close'].rolling(50).mean()
@@ -752,29 +754,42 @@ if analyze_btn or ticker:
                 st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
             # ==========================================
-            # 🗂️ 6. ماسح السوق (الأسماء الديناميكية 💎)
+            # 🗂️ 6. ماسح السوق (الدرع الفولاذي 🛡️)
             # ==========================================
             with tab5:
                 if not df_loads.empty:
                     df_loads_styled = pd.DataFrame(df_loads).copy()
                     
-                    df_loads_styled[col_change_name] = df_loads_styled.apply(lambda x: format_cat(x[col_change_name], x['1d_cat']), axis=1)
-                    df_loads_styled[f'تراكمي 3 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 3 {lbl}'], x['3d_cat']), axis=1)
-                    df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 5 {lbl}'], x['5d_cat']), axis=1)
-                    df_loads_styled[f'تراكمي 10 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 10 {lbl}'], x['10d_cat']), axis=1)
-                    
-                    df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
-                    
-                    subset_cols = [c for c in [col_change_name, f'حالة 3 {lbl}', f'تراكمي 3 {lbl}', f'حالة 5 {lbl}', f'تراكمي 5 {lbl}', f'حالة 10 {lbl}', f'تراكمي 10 {lbl}'] if c in df_loads_styled.columns]
-                    
-                    if subset_cols:
-                        styler_loads = df_loads_styled.style.map(safe_color_table, subset=subset_cols) if hasattr(df_loads_styled.style, 'map') else df_loads_styled.style.applymap(safe_color_table, subset=subset_cols)
-                        st.dataframe(styler_loads, use_container_width=True, height=550, hide_index=True)
-                    else:
-                        st.dataframe(df_loads_styled.astype(str), use_container_width=True, height=550, hide_index=True)
+                    # 🛡️ الحماية الاستباقية: نتأكد من وجود الأعمدة قبل محاولة تلوينها
+                    try:
+                        if col_change_name in df_loads_styled.columns and '1d_cat' in df_loads_styled.columns:
+                            df_loads_styled[col_change_name] = df_loads_styled.apply(lambda x: format_cat(x[col_change_name], x['1d_cat']), axis=1)
+                        
+                        if f'تراكمي 3 {lbl}' in df_loads_styled.columns and '3d_cat' in df_loads_styled.columns:
+                            df_loads_styled[f'تراكمي 3 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 3 {lbl}'], x['3d_cat']), axis=1)
+                        
+                        if f'تراكمي 5 {lbl}' in df_loads_styled.columns and '5d_cat' in df_loads_styled.columns:
+                            df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 5 {lbl}'], x['5d_cat']), axis=1)
+                        
+                        if f'تراكمي 10 {lbl}' in df_loads_styled.columns and '10d_cat' in df_loads_styled.columns:
+                            df_loads_styled[f'تراكمي 10 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 10 {lbl}'], x['10d_cat']), axis=1)
+                        
+                        df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
+                        
+                        subset_cols = [c for c in [col_change_name, f'حالة 3 {lbl}', f'تراكمي 3 {lbl}', f'حالة 5 {lbl}', f'تراكمي 5 {lbl}', f'حالة 10 {lbl}', f'تراكمي 10 {lbl}'] if c in df_loads_styled.columns]
+                        
+                        if subset_cols:
+                            styler_loads = df_loads_styled.style.map(safe_color_table, subset=subset_cols) if hasattr(df_loads_styled.style, 'map') else df_loads_styled.style.applymap(safe_color_table, subset=subset_cols)
+                            st.dataframe(styler_loads, use_container_width=True, height=550, hide_index=True)
+                        else:
+                            st.dataframe(df_loads_styled.astype(str), use_container_width=True, height=550, hide_index=True)
+                    except Exception as e:
+                        # في حالة وجود أي خطأ بالذاكرة، نعرض الجدول بدون تلوين بدلاً من انهيار المنصة
+                        df_safe = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
+                        st.dataframe(df_safe.astype(str), use_container_width=True, height=550, hide_index=True)
 
             # ==========================================
-            # 🚨 7. الرادار الكلاسيكي
+            # 🚨 7. التنبيهات
             # ==========================================
             with tab6:
                 if not df_alerts.empty:
@@ -813,38 +828,43 @@ if analyze_btn or ticker:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             # ==========================================
-            # 📋 8. جدول البيانات التفصيلي الذكي
+            # 📋 8. جدول البيانات التفصيلي 🛡️
             # ==========================================
             with tab4:
                 df_display = df.copy()
-                df_display['Load_Diff_1D'] = df_display['1d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                df_display['Load_Diff_3D'] = df_display['3d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                df_display['Load_Diff_5D'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                df_display['Load_Diff_10D'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
                 
-                dt_format = '%Y-%m-%d' if selected_interval == '1d' else '%Y-%m-%d %H:%M'
-                
-                table = pd.DataFrame({
-                    'الوقت': df_display.index.strftime(dt_format),
-                    'الإغلاق': df_display['Close'].round(2),
-                    'الاتجاه': df_display['Counter'].astype(int),
-                    'MA 50': df_display['SMA_50'].round(2),
-                    'MA 200': df_display['SMA_200'].round(2),
-                    col_change_name: df_display['Load_Diff_1D'],
-                    f'تراكمي 3 {lbl}': df_display['Load_Diff_3D'],
-                    f'تراكمي 5 {lbl}': df_display['Load_Diff_5D'],
-                    f'تراكمي 10 {lbl}': df_display['Load_Diff_10D'],
-                    'حجم السيولة': df_display['Volume'].apply(lambda x: f"{int(x):,}" if pd.notna(x) else "0")
-                })
-                
-                display_table = table.tail(15).iloc[::-1].copy()
-                display_table.set_index('الوقت', inplace=True)
-                
-                subset_data = [col_change_name, f'تراكمي 3 {lbl}', f'تراكمي 5 {lbl}', f'تراكمي 10 {lbl}']
-                existing_data_cols = [c for c in subset_data if c in display_table.columns]
-                
-                if existing_data_cols:
-                    styler_data = display_table.style.map(safe_color_table, subset=existing_data_cols) if hasattr(display_table.style, 'map') else display_table.style.applymap(safe_color_table, subset=existing_data_cols)
-                    st.dataframe(styler_data, use_container_width=True, height=550)
-                else:
-                    st.dataframe(display_table.astype(str), use_container_width=True, height=550)
+                # نفس الدرع الاستباقي هنا لتجنب أي خطأ
+                try:
+                    df_display['Load_Diff_1D'] = df_display['1d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    df_display['Load_Diff_3D'] = df_display['3d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    df_display['Load_Diff_5D'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    df_display['Load_Diff_10D'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    
+                    dt_format = '%Y-%m-%d' if selected_interval == '1d' else '%Y-%m-%d %H:%M'
+                    
+                    table = pd.DataFrame({
+                        'الوقت': df_display.index.strftime(dt_format),
+                        'الإغلاق': df_display['Close'].round(2),
+                        'الاتجاه': df_display['Counter'].astype(int),
+                        'MA 50': df_display['SMA_50'].round(2),
+                        'MA 200': df_display['SMA_200'].round(2),
+                        col_change_name: df_display['Load_Diff_1D'],
+                        f'تراكمي 3 {lbl}': df_display['Load_Diff_3D'],
+                        f'تراكمي 5 {lbl}': df_display['Load_Diff_5D'],
+                        f'تراكمي 10 {lbl}': df_display['Load_Diff_10D'],
+                        'حجم السيولة': df_display['Volume'].apply(lambda x: f"{int(x):,}" if pd.notna(x) else "0")
+                    })
+                    
+                    display_table = table.tail(15).iloc[::-1].copy()
+                    display_table.set_index('الوقت', inplace=True)
+                    
+                    subset_data = [col_change_name, f'تراكمي 3 {lbl}', f'تراكمي 5 {lbl}', f'تراكمي 10 {lbl}']
+                    existing_data_cols = [c for c in subset_data if c in display_table.columns]
+                    
+                    if existing_data_cols:
+                        styler_data = display_table.style.map(safe_color_table, subset=existing_data_cols) if hasattr(display_table.style, 'map') else display_table.style.applymap(safe_color_table, subset=existing_data_cols)
+                        st.dataframe(styler_data, use_container_width=True, height=550)
+                    else:
+                        st.dataframe(display_table.astype(str), use_container_width=True, height=550)
+                except Exception as e:
+                    st.dataframe(df_display.tail(15).iloc[::-1].astype(str), use_container_width=True, height=550)

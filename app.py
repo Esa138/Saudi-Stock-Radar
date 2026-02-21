@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V66 Time Sync", layout="wide", page_icon="⏱️")
+st.set_page_config(page_title="منصة ماسة 💎 | V67 Live Clock", layout="wide", page_icon="⏱️")
 
 DB_FILE = "masa_database.db"
 
@@ -87,7 +87,7 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 st.markdown(custom_css, unsafe_allow_html=True)
 
 masa_logo_html = """
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 25px; margin-top: -10px;">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 5px; margin-top: -10px;">
     <svg width="90" height="90" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <linearGradient id="neonBlue" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -113,11 +113,41 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V66 (TIME SYNC ⏱️)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V67</span>
     </div>
 </div>
 """
 st.markdown(masa_logo_html, unsafe_allow_html=True)
+
+# ⏱️ V67: إضافة ساعة رقمية حية (Live Clock) تنبض بالثواني بتوقيت مكة
+clock_html = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700&display=swap');
+body { margin: 0; padding: 0; background-color: transparent; display: flex; justify-content: center; align-items: center; height: 100%; font-family: 'Tajawal', sans-serif;}
+.clock-wrapper { background: linear-gradient(145deg, #15171e, #1a1c24); border: 1px solid #2d303e; padding: 8px 25px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.1); color: #aaa; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #00d2ff;}
+.time-pulse { color: #00d2ff; font-size: 18px; letter-spacing: 2px; font-family: 'Courier New', monospace; text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);}
+.date-text { color: #e0e0e0;}
+</style>
+<div class="clock-wrapper" dir="rtl">
+    <span>🕋 توقيت مكة:</span>
+    <span class="time-pulse" id="live-time">--:--:--</span>
+    <span class="date-text" id="live-date"></span>
+</div>
+<script>
+    function updateClock() {
+        let now = new Date();
+        let timeOpts = { timeZone: 'Asia/Riyadh', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        let dateOpts = { timeZone: 'Asia/Riyadh', year: 'numeric', month: 'short', day: 'numeric' };
+        document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', timeOpts);
+        document.getElementById('live-date').innerText = ' | ' + now.toLocaleDateString('ar-SA', dateOpts);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+"""
+components.html(clock_html, height=55)
+st.markdown("<br>", unsafe_allow_html=True)
+
 
 saudi_tz = datetime.timezone(datetime.timedelta(hours=3))
 now = datetime.datetime.now(saudi_tz)
@@ -207,7 +237,6 @@ def format_price(val, ticker):
             return f"{v:.2f}"
     except: return str(val)
 
-# 🌍 V66: دالة تحويل التوقيت الشاملة إلى توقيت السعودية (Asia/Riyadh)
 def localize_timezone(df, interval):
     if df is None or df.empty or interval == "1d": return df
     try:
@@ -434,7 +463,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v66(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v67(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -699,7 +728,7 @@ if analyze_btn or ticker:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v66(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v67(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -811,7 +840,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V66_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V67_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -999,7 +1028,6 @@ if analyze_btn or ticker:
                 else:
                     tv_symbol = ticker
                 
-                # ⏱️ توحيد التوقيت لجميع الأسواق لتتطابق مع جداول المنصة
                 tz = "Asia/Riyadh"
                     
                 tv_interval_tv = "D" if selected_interval == "1d" else selected_interval.replace("m", "")

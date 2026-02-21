@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V65 Global Sandbox", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="منصة ماسة 💎 | V66 Time Sync", layout="wide", page_icon="⏱️")
 
 DB_FILE = "masa_database.db"
 
@@ -113,7 +113,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V65 (GLOBAL SANDBOX 🌍)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V66 (TIME SYNC ⏱️)</span>
     </div>
 </div>
 """
@@ -138,7 +138,7 @@ with st.expander("⚙️ لوحة التحكم والإعدادات (المحف�
         tg_chat = st.text_input("Chat ID (الصق رقم غرفتك هنا)")
 
 # ==========================================
-# 🌍 2. قوائم الأسواق الشاملة (الأسهم، الفوركس، الكريبتو)
+# 🌍 2. قوائم الأسواق الشاملة
 # ==========================================
 SAUDI_NAMES = {
     '1010.SR': 'الرياض', '1020.SR': 'الجزيرة', '1030.SR': 'الاستثمار', '1050.SR': 'السعودي الفرنسي', '1060.SR': 'الأول', '1080.SR': 'العربي', '1111.SR': 'تداول', '1120.SR': 'الراجحي', '1140.SR': 'البلاد', '1150.SR': 'الإنماء', '1180.SR': 'الأهلي', '1182.SR': 'أملاك', '1183.SR': 'الموارد',
@@ -193,7 +193,6 @@ def get_stock_name(ticker):
     if ticker in CRYPTO_NAMES: return CRYPTO_NAMES[ticker].split(' ')[0]
     return ticker.replace('.SR', '').replace('=X', '').replace('-USD', '')
 
-# 🎯 هندسة دقة الأرقام (لتناسب الأسهم، العملات الرقمية، والفوركس بدقة البيب)
 def format_price(val, ticker):
     if pd.isna(val): return "0.00"
     try:
@@ -208,7 +207,18 @@ def format_price(val, ticker):
             return f"{v:.2f}"
     except: return str(val)
 
-# 🌍 V65: درع الماكرو المتكيف مع الأسواق اللامركزية
+# 🌍 V66: دالة تحويل التوقيت الشاملة إلى توقيت السعودية (Asia/Riyadh)
+def localize_timezone(df, interval):
+    if df is None or df.empty or interval == "1d": return df
+    try:
+        if isinstance(df.index, pd.DatetimeIndex):
+            if df.index.tz is None:
+                df.index = df.index.tz_localize('UTC').tz_convert('Asia/Riyadh')
+            else:
+                df.index = df.index.tz_convert('Asia/Riyadh')
+    except Exception as e: pass
+    return df
+
 @st.cache_data(ttl=1800)
 def get_macro_status(market_choice):
     if "السعودي" in market_choice:
@@ -286,7 +296,6 @@ def get_mom_badge(score):
     elif score >= 50: return f"<span style='background-color:rgba(255,215,0,0.2); color:#FFD700; padding: 4px 8px; border-radius:6px; border:1px solid #FFD700; font-weight:bold;'>{score} ⚡</span>"
     else: return f"<span style='background-color:rgba(255,82,82,0.2); color:#FF5252; padding: 4px 8px; border-radius:6px; border:1px solid #FF5252; font-weight:bold;'>{score} ❄️</span>"
 
-# 🧠 V65 AI: تخصيص الذكاء الاصطناعي ليفهم الأسواق اللامركزية (تجاهل الفوليوم)
 def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d, macro_status, is_forex=False, is_crypto=False):
     if pd.isna(ma50) or pd.isna(ma200): return 0, "انتظار ⏳", "gray", ["بيانات غير كافية للتحليل."]
     tech_score = 50
@@ -301,7 +310,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     is_zero_breakout = "زيرو 👑" in event_text
 
     macro_reason = ""
-    # 💱 الفوركس معفى من الدرع لأنه أزواج متضادة، لكن الكريبتو يتبع البيتكوين!
     if macro_status == "سلبي ⛈️" and not is_forex:
         if "اختراق" in event_text or is_zero_breakout:
             tech_score -= 25; veto_max_59 = True 
@@ -322,7 +330,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
         else:
             tech_score -= 25; veto_max_59 = True; reasons.append("❌ <b>الاتجاه العام:</b> ينهار تحت متوسط 200 (مسار هابط).")
 
-    # إعفاء الأسواق اللامركزية من شرط السيولة
     if is_forex or is_crypto:
         tech_score += 10
         reasons.append("🌊 <b>السيولة:</b> سوق عالمي عالي السيولة (مستثنى من الفوليوم).")
@@ -418,22 +425,22 @@ def safe_color_table(val):
     except: pass
     return ''
 
-@st.cache_data(ttl=900)
+@st.cache_data(ttl=300)
 def get_stock_data(ticker_symbol, period="2y", interval="1d"): 
     df = yf.Ticker(ticker_symbol).history(period=period, interval=interval).copy()
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
+    df = localize_timezone(df, interval)
     return df
 
-@st.cache_data(ttl=1800)
-def scan_market_v65(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+@st.cache_data(ttl=900)
+def scan_market_v66(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
     saudi_tz_internal = datetime.timezone(datetime.timedelta(hours=3))
     now_internal = datetime.datetime.now(saudi_tz_internal)
     today_str_internal = now_internal.strftime("%Y-%m-%d")
-    full_time_str = now_internal.strftime("%Y-%m-%d | %I:%M %p") 
     
     col_change = "تغير 1 يوم" if interval == "1d" else "تغير 1 شمعة"
     col_count = "عدد الأيام" if interval == "1d" else "عدد الشموع"
@@ -444,6 +451,7 @@ def scan_market_v65(watchlist_list, period="1y", interval="1d", lbl="أيام", 
             df = yf.Ticker(tk).history(period=period, interval=interval)
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
+            df = localize_timezone(df, interval)
             if len(df) > 30: return tk, df
         except: pass
         return tk, None
@@ -500,9 +508,15 @@ def scan_market_v65(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 cur_count = counters[-1]
                 
                 try:
-                    candle_time = df_s.index[-1].strftime("%Y-%m-%d %H:%M") if interval != "1d" else today_str_internal
+                    if interval != "1d":
+                        candle_time = df_s.index[-1].strftime("%Y-%m-%d %H:%M")
+                        full_time_str = df_s.index[-1].strftime("%Y-%m-%d | %I:%M %p")
+                    else:
+                        candle_time = today_str_internal
+                        full_time_str = now_internal.strftime("%Y-%m-%d | %I:%M %p")
                 except:
                     candle_time = today_str_internal
+                    full_time_str = now_internal.strftime("%Y-%m-%d | %I:%M %p")
 
                 pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
                 pct_3d = (last_c / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
@@ -593,7 +607,6 @@ def scan_market_v65(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 # ==========================================
 st.markdown("<div class='search-container'>", unsafe_allow_html=True)
 
-# 🌍 أزرار الأسواق الأربعة الجديدة
 col_m1, col_m2 = st.columns([1, 1])
 with col_m1:
     market_choice = st.radio("🌐 الأسواق:", ["السعودي 🇸🇦", "الأمريكي 🇺🇸", "الفوركس 💱", "الكريبتو ₿"], horizontal=True)
@@ -654,7 +667,6 @@ with col_search1:
 
 with col_search2: analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
 
-# 🌍 قراءة طقس السوق وعرض لوحة الدرع الكلي (Macro Shield)
 macro_status, macro_name, macro_pct, macro_price = get_macro_status(market_choice)
 
 if "الفوركس" in market_choice:
@@ -682,12 +694,12 @@ if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق لـ ({display_name})..."):
         df = get_stock_data(ticker, selected_period_ui, selected_interval)
         if df.empty: 
-            st.error("❌ لا توجد بيانات! (تذكر: الفوركس مغلق يومي السبت والأحد، جرب العملات الرقمية ₿ للتدريب الآن)")
+            st.error("❌ لا توجد بيانات كافية لهذا الأصل في هذا الفاصل الزمني!")
         else:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v65(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v66(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -799,7 +811,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V65_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V66_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -934,8 +946,8 @@ if analyze_btn or ticker:
                 
                 fig2.update_layout(height=650, hovermode='x unified', template='plotly_dark', margin=dict(l=10, r=10, t=10, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                 if selected_interval != "1d": 
-                    if is_crypto_main: pass # الكريبتو لا يغلق أبداً
-                    elif is_fx_main: fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"])]) # الفوركس يغلق بالويكند
+                    if is_crypto_main: pass
+                    elif is_fx_main: fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"])])
                     else: fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[16, 9], pattern="hour")])
                 st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
@@ -976,20 +988,19 @@ if analyze_btn or ticker:
             with tab2:
                 if is_fx_main:
                     tv_ticker = ticker.replace('=X', '')
-                    if len(tv_ticker) == 3: tv_ticker = "USD" + tv_ticker # معالجة الين والفرنك
+                    if len(tv_ticker) == 3: tv_ticker = "USD" + tv_ticker
                     tv_symbol = f"FX:{tv_ticker}"
-                    tz = "Etc/UTC"
                 elif is_crypto_main:
                     tv_ticker = ticker.replace('-USD', '')
                     tv_symbol = f"BINANCE:{tv_ticker}USDT"
-                    tz = "Etc/UTC"
                 elif "السعودي" in market_choice:
                     tv_ticker = ticker.replace('.SR', '')
                     tv_symbol = f"TADAWUL:{tv_ticker}"
-                    tz = "Asia/Riyadh"
                 else:
                     tv_symbol = ticker
-                    tz = "America/New_York"
+                
+                # ⏱️ توحيد التوقيت لجميع الأسواق لتتطابق مع جداول المنصة
+                tz = "Asia/Riyadh"
                     
                 tv_interval_tv = "D" if selected_interval == "1d" else selected_interval.replace("m", "")
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""

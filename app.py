@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V61 Institutional", layout="wide", page_icon="💎")
+st.set_page_config(page_title="منصة ماسة 💎 | V62 Institutional", layout="wide", page_icon="💎")
 
 DB_FILE = "masa_database.db"
 
@@ -113,7 +113,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V61</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V62</span>
     </div>
 </div>
 """
@@ -281,8 +281,10 @@ def format_cat(val, cat):
         return f"⚪ {f_val:.2f}% ({cat})"
     except: return str(val)
 
+# 🎨 V62: إضافة تلوين التنبيه الذهبي للرادار
 def safe_color_table(val):
     val_str = str(val)
+    if "👑" in val_str: return 'color: #ffd700; font-weight: bold; background-color: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700;'
     if "🟢" in val_str or "✅" in val_str or "🚀" in val_str or "💎" in val_str: return 'color: #00E676; font-weight: bold;'
     if "🔴" in val_str or "❌" in val_str or "🩸" in val_str or "⚠️" in val_str: return 'color: #FF5252; font-weight: bold;'
     if "MAJOR" in val_str: return 'font-weight: bold;'
@@ -303,7 +305,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=1800)
-def scan_market_v61(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي"):
+def scan_market_v62(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -389,6 +391,12 @@ def scan_market_v61(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 if last_c > h3.iloc[-1] and prev_c <= h3.iloc[-2]: bo_today.append(f"3{lbl}"); alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"اختراق 3 {lbl} 🟢"})
                 if last_c > h4.iloc[-1] and prev_c <= h4.iloc[-2]: bo_today.append(f"4{lbl}")
                 if last_c > h10.iloc[-1] and prev_c <= h10.iloc[-2]: bo_today.append(f"10{lbl}")
+                
+                # 🚀 V62: رادار اختراق سقف زيرو الذهبي (نظام كشف الانفجارات التاريخية)
+                if pd.notna(zr_h.iloc[-1]) and last_c > zr_h.iloc[-1]:
+                    if prev_c <= zr_h.iloc[-2]:  # التأكد أنه اختراق جديد اليوم/الآن
+                        alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"اختراق سقف زيرو 👑🚀"})
+                        bo_today.append("زيرو 👑")
 
                 if last_c < l3.iloc[-1] and prev_c >= l3.iloc[-2]: bd_today.append(f"3{lbl}"); alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"كسر 3 {lbl} 🔴"})
 
@@ -415,7 +423,8 @@ def scan_market_v61(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 event_text = " | ".join(events)
                 bg_color, text_color, border_color = "transparent", "gray", "gray"
-                if any(x in event_text for x in ["🚀", "🟢", "💎", "📈", "🔥"]): bg_color, text_color, border_color = "rgba(0, 230, 118, 0.12)", "#00E676", "rgba(0, 230, 118, 0.5)"
+                if "👑" in event_text: bg_color, text_color, border_color = "rgba(255, 215, 0, 0.12)", "#FFD700", "rgba(255, 215, 0, 0.5)"
+                elif any(x in event_text for x in ["🚀", "🟢", "💎", "📈", "🔥"]): bg_color, text_color, border_color = "rgba(0, 230, 118, 0.12)", "#00E676", "rgba(0, 230, 118, 0.5)"
                 elif any(x in event_text for x in ["🩸", "🔴", "🛑", "📉"]): bg_color, text_color, border_color = "rgba(255, 82, 82, 0.12)", "#FF5252", "rgba(255, 82, 82, 0.5)"
                 elif "⚠️" in event_text: bg_color, text_color, border_color = "rgba(255, 215, 0, 0.12)", "#FFD700", "rgba(255, 215, 0, 0.5)"
                 
@@ -447,7 +456,6 @@ with col_m1:
 with col_m2:
     tf_choice = st.radio("⏳ الفاصل الزمني:", ["يومي (1D)", "ساعة (60m)", "15 دقيقة (15m)"], horizontal=True)
 
-# 🛡️ V61: فصل توقيت جلب البيانات (60 يوم للشارت لضمان حساب الـ 300 شمعة بدقة)
 interval_map = {"يومي (1D)": "1d", "ساعة (60m)": "60m", "15 دقيقة (15m)": "15m"}
 period_map_scan = {"1d": "2y", "60m": "3mo", "15m": "1mo"} 
 period_map_ui = {"1d": "2y", "60m": "6mo", "15m": "60d"}   
@@ -491,7 +499,7 @@ if analyze_btn or ticker:
         if df.empty: 
             st.error("❌ لا توجد بيانات كافية لهذا السهم على هذا الفاصل الزمني!")
         else:
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v61(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v62(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -583,7 +591,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Stock:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['raw_target']:.2f}\n🛡️ *SL:* {row['raw_sl']:.2f}\n⚖️ *Max Shares:* {shares}\n\n🤖 _Masa Quant System V61_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Stock:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['raw_target']:.2f}\n🛡️ *SL:* {row['raw_sl']:.2f}\n⚖️ *Max Shares:* {shares}\n\n🤖 _Masa Quant System V62_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -759,20 +767,15 @@ if analyze_btn or ticker:
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 
-            # ==========================================
-            # 📊 8. شارت ماسة (مطابق تماماً لـ Pine Script) 🌟
-            # ==========================================
             with tab3:
                 df_plot = df.tail(150) if selected_interval != '1d' else df.tail(300)
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
                 
                 fig.add_trace(go.Candlestick(x=df_plot.index, open=df_plot['Open'], high=df_plot['High'], low=df_plot['Low'], close=df_plot['Close'], name='السعر'), row=1, col=1)
                 
-                # 🎨 تغيير الألوان لتطابق شارتك وفك الاشتباك اللوني
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_200'], line=dict(color='#9c27b0', width=2), name='MA 200'), row=1, col=1) # بنفسجي
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  # سماوي
+                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_200'], line=dict(color='#9c27b0', width=2), name='MA 200'), row=1, col=1) 
+                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  
                 
-                # 📏 إعدادات زيرو انعكاس (سمك 4، متقطع عريض، أفقي مدرج)
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_High'], line=dict(color='white', width=4, dash='dash', shape='hv'), name='سقف زيرو'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_Low'], line=dict(color='orange', width=4, dash='dash', shape='hv'), name='قاع زيرو'), row=1, col=1)
                 

@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V67 Live Clock", layout="wide", page_icon="⏱️")
+st.set_page_config(page_title="منصة ماسة 💎 | V68 24H Sync", layout="wide", page_icon="⏱️")
 
 DB_FILE = "masa_database.db"
 
@@ -113,13 +113,13 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V67</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V68 (24H SYNC ⏱️)</span>
     </div>
 </div>
 """
 st.markdown(masa_logo_html, unsafe_allow_html=True)
 
-# ⏱️ V67: إضافة ساعة رقمية حية (Live Clock) تنبض بالثواني بتوقيت مكة
+# ⏱️ V68: تحديث الساعة لنظام 24 ساعة العسكري (Military Time)
 clock_html = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700&display=swap');
@@ -129,16 +129,17 @@ body { margin: 0; padding: 0; background-color: transparent; display: flex; just
 .date-text { color: #e0e0e0;}
 </style>
 <div class="clock-wrapper" dir="rtl">
-    <span>🕋 توقيت مكة:</span>
+    <span>🕋 توقيت مكة (24H):</span>
     <span class="time-pulse" id="live-time">--:--:--</span>
     <span class="date-text" id="live-date"></span>
 </div>
 <script>
     function updateClock() {
         let now = new Date();
-        let timeOpts = { timeZone: 'Asia/Riyadh', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        // تفعيل نظام 24 ساعة (hour12: false) مع استخدام 'en-GB' لضمان التنسيق العسكري
+        let timeOpts = { timeZone: 'Asia/Riyadh', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
         let dateOpts = { timeZone: 'Asia/Riyadh', year: 'numeric', month: 'short', day: 'numeric' };
-        document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', timeOpts);
+        document.getElementById('live-time').innerText = now.toLocaleTimeString('en-GB', timeOpts);
         document.getElementById('live-date').innerText = ' | ' + now.toLocaleDateString('ar-SA', dateOpts);
     }
     setInterval(updateClock, 1000);
@@ -463,13 +464,12 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v67(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v68(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
     saudi_tz_internal = datetime.timezone(datetime.timedelta(hours=3))
     now_internal = datetime.datetime.now(saudi_tz_internal)
-    today_str_internal = now_internal.strftime("%Y-%m-%d")
     
     col_change = "تغير 1 يوم" if interval == "1d" else "تغير 1 شمعة"
     col_count = "عدد الأيام" if interval == "1d" else "عدد الشموع"
@@ -536,16 +536,16 @@ def scan_market_v67(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                     counters.append(counter)
                 cur_count = counters[-1]
                 
+                # ⏱️ V68: إجبار طباعة الوقت في جميع الجداول (حتى في اليومي)
                 try:
                     if interval != "1d":
                         candle_time = df_s.index[-1].strftime("%Y-%m-%d %H:%M")
-                        full_time_str = df_s.index[-1].strftime("%Y-%m-%d | %I:%M %p")
                     else:
-                        candle_time = today_str_internal
-                        full_time_str = now_internal.strftime("%Y-%m-%d | %I:%M %p")
+                        candle_time = now_internal.strftime("%Y-%m-%d %H:%M")
                 except:
-                    candle_time = today_str_internal
-                    full_time_str = now_internal.strftime("%Y-%m-%d | %I:%M %p")
+                    candle_time = now_internal.strftime("%Y-%m-%d %H:%M")
+                    
+                full_time_str = now_internal.strftime("%Y-%m-%d | %H:%M")
 
                 pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
                 pct_3d = (last_c / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
@@ -728,7 +728,7 @@ if analyze_btn or ticker:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v67(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v68(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -840,7 +840,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V67_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V68_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -980,88 +980,7 @@ if analyze_btn or ticker:
                     else: fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[16, 9], pattern="hour")])
                 st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
-            with tab5:
-                if not df_loads.empty:
-                    df_loads_styled = pd.DataFrame(df_loads).copy()
-                    try:
-                        if col_change_name in df_loads_styled.columns and '1d_cat' in df_loads_styled.columns:
-                            df_loads_styled[col_change_name] = df_loads_styled.apply(lambda x: format_cat(x[col_change_name], x['1d_cat']), axis=1)
-                        if f'تراكمي 3 {lbl}' in df_loads_styled.columns and '3d_cat' in df_loads_styled.columns:
-                            df_loads_styled[f'تراكمي 3 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 3 {lbl}'], x['3d_cat']), axis=1)
-                        if f'تراكمي 5 {lbl}' in df_loads_styled.columns and '5d_cat' in df_loads_styled.columns:
-                            df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 5 {lbl}'], x['5d_cat']), axis=1)
-                        if f'تراكمي 10 {lbl}' in df_loads_styled.columns and '10d_cat' in df_loads_styled.columns:
-                            df_loads_styled[f'تراكمي 10 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 10 {lbl}'], x['10d_cat']), axis=1)
-                        
-                        df_loads_styled = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
-                        subset_cols = [c for c in [col_change_name, f'حالة 3 {lbl}', f'تراكمي 3 {lbl}', f'حالة 5 {lbl}', f'تراكمي 5 {lbl}', f'حالة 10 {lbl}', f'تراكمي 10 {lbl}'] if c in df_loads_styled.columns]
-                        
-                        if subset_cols:
-                            styler_loads = df_loads_styled.style.map(safe_color_table, subset=subset_cols) if hasattr(df_loads_styled.style, 'map') else df_loads_styled.style.applymap(safe_color_table, subset=subset_cols)
-                            st.dataframe(styler_loads, use_container_width=True, height=550, hide_index=True)
-                        else: st.dataframe(df_loads_styled.astype(str), use_container_width=True, height=550, hide_index=True)
-                    except Exception as e:
-                        df_safe = df_loads_styled.drop(columns=['1d_cat', '3d_cat', '5d_cat', '10d_cat'], errors='ignore')
-                        st.dataframe(df_safe.astype(str), use_container_width=True, height=550, hide_index=True)
-                else: st.markdown("<div class='empty-box'>📭 لا توجد بيانات.</div>", unsafe_allow_html=True)
-
-            with tab6:
-                if not df_alerts.empty:
-                    df_alerts_disp = pd.DataFrame(df_alerts)
-                    if 'التنبيه' in df_alerts_disp.columns:
-                        styler_alerts = df_alerts_disp.style.map(safe_color_table, subset=['التنبيه']) if hasattr(df_alerts_disp.style, 'map') else df_alerts_disp.style.applymap(safe_color_table, subset=['التنبيه'])
-                        st.dataframe(styler_alerts, use_container_width=True, height=550, hide_index=True)
-                    else: st.dataframe(df_alerts_disp.astype(str), use_container_width=True, height=550, hide_index=True)
-                else: st.markdown(f"<div class='empty-box'>لم يتم رصد أي اختراقات أو كسور في السوق على فريم ({tf_label_name}).</div>", unsafe_allow_html=True)
-
-            with tab2:
-                if is_fx_main:
-                    tv_ticker = ticker.replace('=X', '')
-                    if len(tv_ticker) == 3: tv_ticker = "USD" + tv_ticker
-                    tv_symbol = f"FX:{tv_ticker}"
-                elif is_crypto_main:
-                    tv_ticker = ticker.replace('-USD', '')
-                    tv_symbol = f"BINANCE:{tv_ticker}USDT"
-                elif "السعودي" in market_choice:
-                    tv_ticker = ticker.replace('.SR', '')
-                    tv_symbol = f"TADAWUL:{tv_ticker}"
-                else:
-                    tv_symbol = ticker
-                
-                tz = "Asia/Riyadh"
-                    
-                tv_interval_tv = "D" if selected_interval == "1d" else selected_interval.replace("m", "")
-                tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","MASimple@tv-basicstudies"]}});</script></div>"""
-                components.html(tradingview_html, height=700)
-
-            with tab3:
-                df_plot = df.tail(150) if selected_interval != '1d' else df.tail(300)
-                fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
-                
-                fig.add_trace(go.Candlestick(x=df_plot.index, open=df_plot['Open'], high=df_plot['High'], low=df_plot['Low'], close=df_plot['Close'], name='السعر'), row=1, col=1)
-                
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_200'], line=dict(color='#9c27b0', width=2), name='MA 200'), row=1, col=1) 
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  
-                
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_High'], line=dict(color='white', width=4, dash='dash', shape='hv'), name='سقف زيرو'), row=1, col=1)
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_Low'], line=dict(color='orange', width=4, dash='dash', shape='hv'), name='قاع زيرو'), row=1, col=1)
-                
-                colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]
-                fig.add_trace(go.Bar(x=df_plot.index, y=df_plot['Volume'], marker_color=colors, name='السيولة'), row=2, col=1)
-                
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['RSI'], line=dict(color='purple', width=2), name='RSI 14'), row=3, col=1)
-                
-                fig.add_hline(y=70, line_dash="dot", row=3, col=1, line_color="red")
-                fig.add_hline(y=50, line_dash="solid", row=3, col=1, line_color="gray", opacity=0.5) 
-                fig.add_hline(y=30, line_dash="dot", row=3, col=1, line_color="green")
-                
-                fig.update_layout(height=800, template='plotly_dark', showlegend=False, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
-                if selected_interval != "1d": 
-                    if is_crypto_main: pass
-                    elif is_fx_main: fig.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"])])
-                    else: fig.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[16, 9], pattern="hour")])
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
+            # ⏱️ V68: فرض طباعة الوقت في جدول البيانات وتحديث الشمعة الحالية
             with tab4:
                 df_display = df.copy()
                 try:
@@ -1070,10 +989,14 @@ if analyze_btn or ticker:
                     df_display['Load_Diff_5D'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
                     df_display['Load_Diff_10D'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
                     
-                    dt_format = '%Y-%m-%d' if selected_interval == '1d' else '%Y-%m-%d %H:%M'
+                    time_list = df_display.index.strftime('%Y-%m-%d %H:%M').tolist()
+                    if selected_interval == '1d' and len(time_list) > 0:
+                        now_tz = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3)))
+                        # استبدال وقت الشمعة الأخيرة (الحالية) بوقت الرصد اللحظي المباشر
+                        time_list[-1] = f"{df_display.index[-1].strftime('%Y-%m-%d')} {now_tz.strftime('%H:%M')}"
                     
                     table_data = {
-                        'الوقت': df_display.index.strftime(dt_format),
+                        'الوقت': time_list,
                         'الإغلاق': df_display['Close'].apply(lambda x: format_price(x, ticker)),
                         'الاتجاه': df_display['Counter'].astype(int),
                         'MA 50': df_display['SMA_50'].apply(lambda x: format_price(x, ticker)),

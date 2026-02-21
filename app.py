@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V68 24H Sync", layout="wide", page_icon="⏱️")
+st.set_page_config(page_title="منصة ماسة 💎 | V69 Ultimate Time Sync", layout="wide", page_icon="⏱️")
 
 DB_FILE = "masa_database.db"
 
@@ -113,13 +113,13 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V68 (24H SYNC ⏱️)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V69 (ULTIMATE TIME SYNC ⏱️)</span>
     </div>
 </div>
 """
 st.markdown(masa_logo_html, unsafe_allow_html=True)
 
-# ⏱️ V68: تحديث الساعة لنظام 24 ساعة العسكري (Military Time)
+# ⏱️ ساعة رقمية بنظام 24 ساعة العسكري
 clock_html = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700&display=swap');
@@ -136,7 +136,6 @@ body { margin: 0; padding: 0; background-color: transparent; display: flex; just
 <script>
     function updateClock() {
         let now = new Date();
-        // تفعيل نظام 24 ساعة (hour12: false) مع استخدام 'en-GB' لضمان التنسيق العسكري
         let timeOpts = { timeZone: 'Asia/Riyadh', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
         let dateOpts = { timeZone: 'Asia/Riyadh', year: 'numeric', month: 'short', day: 'numeric' };
         document.getElementById('live-time').innerText = now.toLocaleTimeString('en-GB', timeOpts);
@@ -228,14 +227,9 @@ def format_price(val, ticker):
     if pd.isna(val): return "0.00"
     try:
         v = float(val)
-        if "=X" in str(ticker):
-            return f"{v:.3f}" if "JPY" in str(ticker) else f"{v:.5f}"
-        elif "-USD" in str(ticker):
-            if v < 2: return f"{v:.5f}"
-            elif v < 50: return f"{v:.3f}"
-            else: return f"{v:.2f}"
-        else:
-            return f"{v:.2f}"
+        if "=X" in str(ticker): return f"{v:.3f}" if "JPY" in str(ticker) else f"{v:.5f}"
+        elif "-USD" in str(ticker): return f"{v:.5f}" if v < 2 else f"{v:.3f}" if v < 50 else f"{v:.2f}"
+        else: return f"{v:.2f}"
     except: return str(val)
 
 def localize_timezone(df, interval):
@@ -251,37 +245,26 @@ def localize_timezone(df, interval):
 
 @st.cache_data(ttl=1800)
 def get_macro_status(market_choice):
-    if "السعودي" in market_choice:
-        ticker, name = "^TASI.SR", "تاسي (TASI)"
-    elif "الأمريكي" in market_choice:
-        ticker, name = "^GSPC", "إس آند بي (S&P 500)"
-    elif "الفوركس" in market_choice:
-        ticker, name = "DX-Y.NYB", "مؤشر الدولار (DXY)"
-    else:
-        ticker, name = "BTC-USD", "البيتكوين (BTC)"
-        
+    if "السعودي" in market_choice: ticker, name = "^TASI.SR", "تاسي (TASI)"
+    elif "الأمريكي" in market_choice: ticker, name = "^GSPC", "إس آند بي (S&P 500)"
+    elif "الفوركس" in market_choice: ticker, name = "DX-Y.NYB", "مؤشر الدولار (DXY)"
+    else: ticker, name = "BTC-USD", "البيتكوين (BTC)"
     try:
         df = yf.Ticker(ticker).history(period="6mo", interval="1d")
         if df.empty: return "تذبذب ⛅", name, 0.0, 0.0
-        
         c = df['Close']
         ma50 = c.rolling(50).mean().iloc[-1]
         if pd.isna(ma50): ma50 = c.mean()
-        
         last_c = c.iloc[-1]
         prev_c = c.iloc[-2] if len(c) > 1 else last_c
         pct_change = ((last_c - prev_c) / prev_c) * 100 if prev_c != 0 else 0
-        
-        if "الفوركس" in market_choice:
-            status = "سوق لامركزي 💱"
+        if "الفوركس" in market_choice: status = "سوق لامركزي 💱"
         else:
             if last_c > ma50: status = "إيجابي ☀️"
             elif last_c < ma50: status = "سلبي ⛈️"
             else: status = "تذبذب ⛅"
-            
         return status, name, pct_change, last_c
-    except:
-        return "تذبذب ⛅", name, 0.0, 0.0
+    except: return "تذبذب ⛅", name, 0.0, 0.0
 
 def save_to_tracker_sql(df_vip, market):
     if df_vip.empty: return False
@@ -291,7 +274,6 @@ def save_to_tracker_sql(df_vip, market):
         date_time = str(row['raw_time'])
         date_only = date_time.split(' | ')[0]
         ticker = str(row['الرمز'])
-        
         c.execute("SELECT 1 FROM tracker WHERE date_only=? AND ticker=?", (date_only, ticker))
         if not c.fetchone():
             c.execute('''INSERT INTO tracker (date_time, market, ticker, company, entry, target, stop_loss, score, mom, date_only)
@@ -464,7 +446,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v68(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v69(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -536,16 +518,17 @@ def scan_market_v68(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                     counters.append(counter)
                 cur_count = counters[-1]
                 
-                # ⏱️ V68: إجبار طباعة الوقت في جميع الجداول (حتى في اليومي)
-                try:
-                    if interval != "1d":
-                        candle_time = df_s.index[-1].strftime("%Y-%m-%d %H:%M")
-                    else:
-                        candle_time = now_internal.strftime("%Y-%m-%d %H:%M")
-                except:
-                    candle_time = now_internal.strftime("%Y-%m-%d %H:%M")
+                # ⏱️ V69: إجبار التوقيت كنص صريح يمنع القص في جميع الجداول
+                current_time_str = now_internal.strftime("%Y-%m-%d | %H:%M")
+                if interval == "1d":
+                    candle_time = current_time_str
+                else:
+                    try: 
+                        candle_time = df_s.index[-1].strftime("%Y-%m-%d | %H:%M")
+                    except: 
+                        candle_time = current_time_str
                     
-                full_time_str = now_internal.strftime("%Y-%m-%d | %H:%M")
+                full_time_str = candle_time
 
                 pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
                 pct_3d = (last_c / c.iloc[-4] - 1) * 100 if len(c)>3 else 0
@@ -728,7 +711,7 @@ if analyze_btn or ticker:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v68(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v69(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -840,16 +823,16 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V68_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL:* {row['الوقف 🛡️']}\n\n🤖 _Masa Quant System V69_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
-                            card = f"<div class='vip-card'><div class='vip-crown'>👑</div><div class='vip-title'>{row['الشركة']}</div><div class='vip-time'>⏱️ {str(row['raw_time']).split(' | ')[-1]}</div><div class='vip-price'>{row['السعر']} <span style='font-size:16px; color:#aaa; font-weight:normal;'>{currency}</span></div><div class='vip-details'><div>الهدف 🎯<br><span class='vip-target'>{row['الهدف 🎯']}</span></div><div>الوقف 🛡️<br><span class='vip-stop'>{row['الوقف 🛡️']}</span></div></div><div style='margin-bottom: 15px;'>{row['الحالة اللحظية ⚡']}</div><div style='background:rgba(33,150,243,0.1); padding:10px; border-radius:8px; border:1px solid rgba(33,150,243,0.3); font-size:14px; margin-bottom:15px; color:#00d2ff;'>📦 الكمية/العقد: <b>{shares_str}</b><br>💵 التكلفة: <b>{pos_value_str}</b></div><div class='vip-score'>التقييم: {row['raw_score']}/100</div></div>"
+                            card = f"<div class='vip-card'><div class='vip-crown'>👑</div><div class='vip-title'>{row['الشركة']}</div><div class='vip-time'>⏱️ {str(row['raw_time'])}</div><div class='vip-price'>{row['السعر']} <span style='font-size:16px; color:#aaa; font-weight:normal;'>{currency}</span></div><div class='vip-details'><div>الهدف 🎯<br><span class='vip-target'>{row['الهدف 🎯']}</span></div><div>الوقف 🛡️<br><span class='vip-stop'>{row['الوقف 🛡️']}</span></div></div><div style='margin-bottom: 15px;'>{row['الحالة اللحظية ⚡']}</div><div style='background:rgba(33,150,243,0.1); padding:10px; border-radius:8px; border:1px solid rgba(33,150,243,0.3); font-size:14px; margin-bottom:15px; color:#00d2ff;'>📦 الكمية/العقد: <b>{shares_str}</b><br>💵 التكلفة: <b>{pos_value_str}</b></div><div class='vip-score'>التقييم: {row['raw_score']}/100</div></div>"
                             cards_html += card
                         cards_html += "</div>"
                         st.markdown(cards_html, unsafe_allow_html=True)
-                    else: st.markdown(f"<div class='empty-box'>👑 الصندوق مغلق حالياً!<br><br>لم تتطابق أي أصول مع شروط الخوارزمية، أو أن (درع السوق الكلي) قام بتجميد التوصيات لحمايتك.</div>", unsafe_allow_html=True)
-                else: st.markdown("<div class='empty-box'>السوق لا يحتوي على فرص حالياً. إذا كنت تعتقد أن هناك خطأ، جرب المحاولة بعد قليل.</div>", unsafe_allow_html=True)
+                    else: st.markdown(f"<div class='empty-box'>👑 الصندوق مغلق حالياً!<br><br>الدرع يمنع التوصيات العشوائية لحمايتك.</div>", unsafe_allow_html=True)
+                else: st.markdown("<div class='empty-box'>السوق لا يحتوي على فرص حالياً بسبب نزيف السيولة. الكاش هو أفضل صفقة الآن!</div>", unsafe_allow_html=True)
 
             with tab_backtest:
                 st.markdown(f"<h3 style='text-align: center; color: #00d2ff; font-weight: bold;'>⏳ محرك الاختبار التاريخي لـ ({display_name})</h3>", unsafe_allow_html=True)
@@ -946,7 +929,7 @@ if analyze_btn or ticker:
                         html_ai += f"<tr><td style='color:#00d2ff; font-weight:bold; font-size:15px;'>{row['الشركة']}</td><td>{row['السعر']}</td><td style='color:{row['اللون']}; font-size:18px; font-weight:bold;'>{row['Score 💯']}/100</td><td>{row['الزخم 🌊']}</td><td>{row['الحالة اللحظية ⚡']}</td><td>{row['وقت الدخول 🕒']}</td><td><span class='target-text'>{row['الهدف 🎯']}</span></td><td><span class='sl-text'>{row['الوقف 🛡️']}</span></td><td style='color:{row['اللون']};'><span class='rec-badge' style='background-color:{row['اللون']}20; border:1px solid {row['اللون']}50;'>{row['التوصية 🚦']}</span></td></tr>"
                     html_ai += "</table>"
                     st.markdown(html_ai, unsafe_allow_html=True)
-                else: st.markdown(f"<div class='empty-box'>📉 لا توجد أصول حققت شروط التوصيات الإيجابية على فريم [{tf_label_name}] حالياً.</div>", unsafe_allow_html=True)
+                else: st.markdown(f"<div class='empty-box'>📉 لا توجد أصول حققت شروط التوصيات الإيجابية على فريم [{tf_label_name}] حالياً. الدرع الماكرو V69 يمنع الدخول العشوائي.</div>", unsafe_allow_html=True)
 
             with tab1:
                 c1, c2, c3, c4 = st.columns(4)
@@ -980,7 +963,7 @@ if analyze_btn or ticker:
                     else: fig2.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[16, 9], pattern="hour")])
                 st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
 
-            # ⏱️ V68: فرض طباعة الوقت في جدول البيانات وتحديث الشمعة الحالية
+            # ⏱️ V69: كيّ الوقت وإجباره على الظهور كنص صريح
             with tab4:
                 df_display = df.copy()
                 try:
@@ -989,11 +972,13 @@ if analyze_btn or ticker:
                     df_display['Load_Diff_5D'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
                     df_display['Load_Diff_10D'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
                     
-                    time_list = df_display.index.strftime('%Y-%m-%d %H:%M').tolist()
-                    if selected_interval == '1d' and len(time_list) > 0:
+                    if selected_interval == '1d':
+                        time_list = [d.strftime('%Y-%m-%d | 00:00') for d in df_display.index]
                         now_tz = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3)))
-                        # استبدال وقت الشمعة الأخيرة (الحالية) بوقت الرصد اللحظي المباشر
-                        time_list[-1] = f"{df_display.index[-1].strftime('%Y-%m-%d')} {now_tz.strftime('%H:%M')}"
+                        if len(time_list) > 0:
+                            time_list[-1] = f"{df_display.index[-1].strftime('%Y-%m-%d')} | {now_tz.strftime('%H:%M')}"
+                    else:
+                        time_list = df_display.index.strftime('%Y-%m-%d | %H:%M').tolist()
                     
                     table_data = {
                         'الوقت': time_list,

@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V74 MTF Matrix", layout="wide", page_icon="👁️‍🗨️")
+st.set_page_config(page_title="منصة ماسة 💎 | V75 Static Zero Bounds", layout="wide", page_icon="🧱")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V74 (MTF MATRIX 👁️‍🗨️)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V75 (STATIC ZERO BOUNDS 🧱)</span>
     </div>
 </div>
 """
@@ -291,7 +291,6 @@ def get_mom_badge(score):
     elif score >= 50: return f"<span style='background-color:rgba(255,215,0,0.2); color:#FFD700; padding: 4px 8px; border-radius:6px; border:1px solid #FFD700; font-weight:bold;'>{score} ⚡</span>"
     else: return f"<span style='background-color:rgba(255,82,82,0.2); color:#FF5252; padding: 4px 8px; border-radius:6px; border:1px solid #FF5252; font-weight:bold;'>{score} ❄️</span>"
 
-# 🧠 V74 AI: تحديث محرك الذكاء الاصطناعي ليستقبل الترند اليومي الأكبر (MTF)
 def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d, macro_status, is_forex, is_crypto, last_vwap, rr_ratio, daily_trend, interval):
     if pd.isna(ma50) or pd.isna(ma200): return 0, "انتظار ⏳", "gray", ["بيانات غير كافية للتحليل."]
     tech_score = 50
@@ -311,7 +310,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     macro_reason = ""
     is_absolute_lockdown = False
 
-    # 👁️‍🗨️ V74: فلتر مصفوفة التوافق الزمني (MTF Alignment)
     mtf_reason = ""
     is_mtf_veto = False
     if interval != "1d":
@@ -324,7 +322,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
             tech_score += 15
             mtf_reason = "👁️‍🗨️ <b>[مصفوفة التوافق MTF]:</b> اصطفاف نجمي إيجابي! الفريم اللحظي مدعوم بمسار صاعد مستقر ومؤكد على الفريم اليومي الأكبر."
 
-    # ⚖️ V73: فلتر العائد للمخاطرة (R:R Enforcer)
     if rr_ratio < 1.5:
         tech_score -= 20
         veto_max_59 = True
@@ -333,7 +330,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
         tech_score += 10
         reasons.append(f"⚖️ <b>[إدارة المخاطر R:R]:</b> العائد ممتاز ({rr_ratio:.1f}:1) ومحمي بوقف ATR المطاطي.")
 
-    # 🐋 V73: فلتر الـ VWAP (جهاز كشف الكذب للحيتان)
     if pd.notna(last_vwap) and not is_forex:
         if last_close < last_vwap:
             tech_score -= 20
@@ -405,7 +401,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     reasons = [r for r in reasons if r]
     reasons.insert(0, f"📊 <b>الزخم التراكمي:</b> تقييم قوة الحركة هو <b>{mom_score}/100</b>.")
     
-    # تنفيذ ترتيب الفيتو النهائي والأسباب العلوية
     if mtf_reason: reasons.insert(0, mtf_reason)
     
     if is_absolute_lockdown:
@@ -471,7 +466,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v74(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v75(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -483,7 +478,6 @@ def scan_market_v74(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
     histories = {}
     
-    # 👁️‍🗨️ V74: محرك الجلب المتوازي (Parallel Fetching) يحضر الفريم اللحظي واليومي في نفس الوقت!
     def fetch_data(tk):
         try:
             df = yf.Ticker(tk).history(period=period, interval=interval)
@@ -543,7 +537,9 @@ def scan_market_v74(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 h3, l3 = h.rolling(3).max().shift(1), l.rolling(3).min().shift(1)
                 h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
                 h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
+                
                 zr_window = 300 if len(c) >= 300 else len(c) - 2
+                # الخوارزمية ستحتفظ بالحساب المتدحرج لاتخاذ القرارات بأمان
                 zr_h, zr_l = h.rolling(zr_window, min_periods=10).max().shift(1), l.rolling(zr_window, min_periods=10).min().shift(1)
                 
                 up_diff, down_diff = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
@@ -551,7 +547,6 @@ def scan_market_v74(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 
                 last_c, prev_c, prev2_c = c.iloc[-1], c.iloc[-2], c.iloc[-3]
                 
-                # 👁️‍🗨️ V74: تحديد الاتجاه الأكبر (مصفوفة التوافق الزمني)
                 daily_trend = "صاعد ☀️"
                 if interval == "1d":
                     if pd.notna(ma50.iloc[-1]) and last_c < ma50.iloc[-1]: 
@@ -670,7 +665,6 @@ def scan_market_v74(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 mom_score = calc_momentum_score(pct_1d, pct_5d, pct_10d, vol_ratio)
                 
-                # إرسال بيانات الفريم الأكبر للمصفوفة
                 ai_score, ai_dec, ai_col, reasons_list = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d, macro_status, is_forex, is_crypto, last_vwap, rr_ratio, daily_trend, interval)
                 
                 price_disp = format_price(last_c, tk)
@@ -780,7 +774,7 @@ if analyze_btn or ticker:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v74(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v75(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -896,7 +890,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V74_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V75_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -1055,11 +1049,25 @@ if analyze_btn or ticker:
                 
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_200'], line=dict(color='#9c27b0', width=2), name='MA 200'), row=1, col=1) 
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  
-                
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['VWAP'], line=dict(color='#ffeb3b', width=2, dash='dot'), name='VWAP (خط الحيتان)'), row=1, col=1)
                 
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_High'], line=dict(color='white', width=4, dash='dash', shape='hv'), name='سقف زيرو'), row=1, col=1)
-                fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['ZR_Low'], line=dict(color='orange', width=4, dash='dash', shape='hv'), name='قاع زيرو'), row=1, col=1)
+                # 🧱 V75: رسم خطوط زيرو كـ "أشعة ليزر أفقية ثابتة" بناءً على أحدث قراءة
+                current_zr_high = df['ZR_High'].iloc[-1] if pd.notna(df['ZR_High'].iloc[-1]) else df_plot['High'].max()
+                current_zr_low = df['ZR_Low'].iloc[-1] if pd.notna(df['ZR_Low'].iloc[-1]) else df_plot['Low'].min()
+                
+                fig.add_trace(go.Scatter(
+                    x=[df_plot.index[0], df_plot.index[-1]], 
+                    y=[current_zr_high, current_zr_high], 
+                    mode='lines', line=dict(color='white', width=3, dash='dash'), 
+                    name=f'سقف زيرو ({current_zr_high:.4f})'
+                ), row=1, col=1)
+
+                fig.add_trace(go.Scatter(
+                    x=[df_plot.index[0], df_plot.index[-1]], 
+                    y=[current_zr_low, current_zr_low], 
+                    mode='lines', line=dict(color='orange', width=3, dash='dash'), 
+                    name=f'قاع زيرو ({current_zr_low:.4f})'
+                ), row=1, col=1)
                 
                 colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]
                 fig.add_trace(go.Bar(x=df_plot.index, y=df_plot['Volume'], marker_color=colors, name='السيولة'), row=2, col=1)

@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V78 Zero Radar Fix", layout="wide", page_icon="🪤")
+st.set_page_config(page_title="منصة ماسة 💎 | V79 Data Identity Fix", layout="wide", page_icon="🧬")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V78 (ZERO RADAR FIX 🪤)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V79 (DATA IDENTITY FIX 🧬)</span>
     </div>
 </div>
 """
@@ -380,7 +380,6 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     else:
         if not golden_watch: tech_score -= 20; veto_max_59 = True; reasons.append("🔴 <b>المضاربة:</b> السعر سلبي ويكسر متوسط 50 اللحظي.")
 
-    # 🚨 V78: الفيتو القاتل لكسر زيرو
     if is_zero_breakdown:
         tech_score -= 40; veto_max_59 = True; reasons.append("🕳️ <b>[انهيار تاريخي]:</b> السعر يكسر قاع 300 شمعة ويسقط في الهاوية. حظر دخول نهائي!")
     elif "🚀" in event_text or "🟢" in event_text or "💎" in event_text or "📈" in event_text or "🔥" in event_text or "👑" in event_text or "🌌" in event_text: 
@@ -471,7 +470,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v78(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -506,8 +505,8 @@ def scan_market_v78(watchlist_list, period="1y", interval="1d", lbl="أيام", 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(fetch_data, tk) for tk in watchlist_list]
         for future in as_completed(futures):
-            tk, df, df_1d = future.result()
-            if df is not None: histories[tk] = (df, df_1d)
+            tk, df_s, df_1d = future.result()
+            if df_s is not None: histories[tk] = (df_s, df_1d)
 
     for tk in watchlist_list:
         try: 
@@ -543,7 +542,6 @@ def scan_market_v78(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
                 h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
                 
-                # حساب زيرو بدقة 300 شمعة
                 zr_window = 300 if len(c) >= 300 else max(len(c) - 2, 10)
                 df_s['ZR_High'] = h.rolling(zr_window, min_periods=10).max().shift(1)
                 df_s['ZR_Low'] = l.rolling(zr_window, min_periods=10).min().shift(1)
@@ -613,7 +611,6 @@ def scan_market_v78(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 bo_today, bd_today = [], []
                 
-                # 🪤 V78: إصلاح منطق اصطياد زيرو وإضافة الانهيار
                 if pd.notna(last_zr_h) and last_c > last_zr_h:
                     if prev_c <= prev_zr_h:  
                         alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"اختراق سقف زيرو 👑🚀"})
@@ -699,7 +696,8 @@ def scan_market_v78(watchlist_list, period="1y", interval="1d", lbl="أيام", 
         except Exception as e: 
             continue
 
-    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks), df_s
+    # 🔧 تم تصحيح الكارثة: الماسح يرجع الجداول فقط، ولا يرجع أي بيانات تمس الشاشة الرئيسية!
+    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
 # 🌟 الواجهة الرئيسية
@@ -790,9 +788,10 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
 if analyze_btn or ticker:
-    with st.spinner(f"⚡ جاري مسح السوق لـ ({display_name}) مع تفعيل [مصفوفة التوافق الزمني MTF]..."):
+    with st.spinner(f"⚡ جاري مسح السوق... وجلب بيانات ({display_name}) الدقيقة..."):
         
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks, df = scan_market_v78(
+        # 1. الماسح يعمل في الخلفية بصمت
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v79(
             watchlist_list=selected_watchlist, 
             period=selected_period_scan, 
             interval=selected_interval, 
@@ -801,17 +800,18 @@ if analyze_btn or ticker:
             macro_status=macro_status
         )
         
-        if df is None or df.empty:
-            df = get_stock_data(ticker, selected_period_ui, selected_interval)
+        # 2. 🧬 الشاشة الرئيسية تجلب بيانات (السهم المختار فقط) بمعزل عن الماسح
+        df = get_stock_data(ticker, selected_period_ui, selected_interval)
 
         if df is None or df.empty: 
-            st.error("❌ لا توجد بيانات كافية لهذا الأصل في هذا الفاصل الزمني!")
+            st.error(f"❌ لا توجد بيانات كافية لـ ({display_name}) في هذا الفاصل الزمني!")
         else:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
             if df_loads.empty: st.cache_data.clear()
 
+            # إعادة حساب المؤشرات للسهم المختار بدقة
             close, high, low = df['Close'], df['High'], df['Low']
             vol = df['Volume'] if 'Volume' in df.columns else pd.Series([0]*len(close), index=close.index)
             
@@ -845,6 +845,7 @@ if analyze_btn or ticker:
             ema_up, ema_down = up.ewm(com=13, adjust=False).mean(), down.ewm(com=13, adjust=False).mean()
             df['RSI'] = 100 - (100 / (1 + (ema_up / ema_down)))
 
+            # حساب قنوات زيرو بدقة للسهم المختار
             if 'ZR_High' not in df.columns:
                 zr_window = 300 if len(close) >= 300 else max(len(close) - 2, 10)
                 df['ZR_High'] = high.rolling(zr_window, min_periods=10).max().shift(1)
@@ -918,7 +919,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V78_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V79_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 

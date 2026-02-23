@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V76 Fixed Zero Bounds", layout="wide", page_icon="🧱")
+st.set_page_config(page_title="منصة ماسة 💎 | V77 Zero TV Clone", layout="wide", page_icon="🎯")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V76 (FIXED ZERO BOUNDS 🧱)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V77 (ZERO TV CLONE 🎯)</span>
     </div>
 </div>
 """
@@ -466,7 +466,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v76(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -538,8 +538,13 @@ def scan_market_v76(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
                 h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
                 
-                zr_window = 300 if len(c) >= 300 else len(c) - 2
-                zr_h, zr_l = h.rolling(zr_window, min_periods=10).max().shift(1), l.rolling(zr_window, min_periods=10).min().shift(1)
+                # الخوارزمية تحتفظ بالنافذة المتدحرجة لاتخاذ القرارات الرياضية بدقة
+                zr_window = 300 if len(c) >= 300 else max(len(c) - 2, 10)
+                df_s['ZR_High'] = h.rolling(zr_window, min_periods=10).max().shift(1)
+                df_s['ZR_Low'] = l.rolling(zr_window, min_periods=10).min().shift(1)
+                
+                zr_h = df_s['ZR_High']
+                zr_l = df_s['ZR_Low']
                 
                 up_diff, down_diff = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
                 rsi = 100 - (100 / (1 + (up_diff.ewm(com=13, adjust=False).mean() / down_diff.ewm(com=13, adjust=False).mean())))
@@ -674,7 +679,7 @@ def scan_market_v76(watchlist_list, period="1y", interval="1d", lbl="أيام", 
         except Exception as e: 
             continue
 
-    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
+    return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks), df_s
 
 # ==========================================
 # 🌟 الواجهة الرئيسية
@@ -766,21 +771,24 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق لـ ({display_name}) مع تفعيل [مصفوفة التوافق الزمني MTF]..."):
-        df = get_stock_data(ticker, selected_period_ui, selected_interval)
-        if df.empty: 
+        
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks, df = scan_market_v77(
+            watchlist_list=selected_watchlist, 
+            period=selected_period_scan, 
+            interval=selected_interval, 
+            lbl=lbl, 
+            tf_label=tf_label_name,
+            macro_status=macro_status
+        )
+        
+        if df is None or df.empty:
+            df = get_stock_data(ticker, selected_period_ui, selected_interval)
+
+        if df is None or df.empty: 
             st.error("❌ لا توجد بيانات كافية لهذا الأصل في هذا الفاصل الزمني!")
         else:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
-            
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v76(
-                watchlist_list=selected_watchlist, 
-                period=selected_period_scan, 
-                interval=selected_interval, 
-                lbl=lbl, 
-                tf_label=tf_label_name,
-                macro_status=macro_status
-            )
             
             if df_loads.empty: st.cache_data.clear()
 
@@ -817,9 +825,11 @@ if analyze_btn or ticker:
             ema_up, ema_down = up.ewm(com=13, adjust=False).mean(), down.ewm(com=13, adjust=False).mean()
             df['RSI'] = 100 - (100 / (1 + (ema_up / ema_down)))
 
-            zr_window = 300 if len(close) >= 300 else len(close) - 2
-            df['ZR_High'] = high.rolling(window=zr_window, min_periods=10).max().shift(1)
-            df['ZR_Low'] = low.rolling(window=zr_window, min_periods=10).min().shift(1)
+            # ⚓ تطبيق محرك المرساة الرئيسي إذا لم يأتِ من الماسح
+            if 'ZR_High' not in df.columns:
+                zr_window = 300 if len(close) >= 300 else max(len(close) - 2, 10)
+                df['ZR_High'] = high.rolling(zr_window, min_periods=10).max().shift(1)
+                df['ZR_Low'] = low.rolling(zr_window, min_periods=10).min().shift(1)
 
             last_close, prev_close = close.iloc[-1], close.iloc[-2]
             pct_change = ((last_close - prev_close) / prev_close) * 100 if prev_close != 0 else 0
@@ -841,7 +851,7 @@ if analyze_btn or ticker:
                 else: trend, trend_color = "تذبذب (حيرة) ⚖️", "🟡"
             else: trend, trend_color = "جاري الحساب...", "⚪"
 
-            zr_status, zr_color = ("سماء زرقاء", "🌌") if last_close > last_zr_high else ("يختبر سقف زيرو", "⚠️") if last_close >= last_zr_high * 0.98 else ("يختبر قاع زيرو", "💎") if last_close <= last_zr_low * 1.05 else ("في منتصف القناة", "⚖️")
+            zr_status, zr_color = ("سماء زرقاء", "🌌") if pd.notna(last_zr_high) and last_close > last_zr_high else ("يختبر سقف زيرو", "⚠️") if pd.notna(last_zr_high) and last_close >= last_zr_high * 0.98 else ("يختبر قاع زيرو", "💎") if pd.notna(last_zr_low) and last_close <= last_zr_low * 1.05 else ("في منتصف القناة", "⚖️")
 
             st.markdown(f"### 🤖 قراءة استراتيجية ماسة لـ ({display_name}) - فاصل [{tf_label_name}]:")
             m1, m2, m3, m4 = st.columns(4)
@@ -889,7 +899,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V76_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V77_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -987,7 +997,7 @@ if analyze_btn or ticker:
                         if f'تراكمي 3 {lbl}' in df_loads_styled.columns and '3d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 3 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 3 {lbl}'], x['3d_cat']), axis=1)
                         if f'تراكمي 5 {lbl}' in df_loads_styled.columns and '5d_cat' in df_loads_styled.columns:
-                            df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكم5 {lbl}'], x['5d_cat']), axis=1)
+                            df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 5 {lbl}'], x['5d_cat']), axis=1)
                         if f'تراكمي 10 {lbl}' in df_loads_styled.columns and '10d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 10 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 10 {lbl}'], x['10d_cat']), axis=1)
                         
@@ -1040,6 +1050,7 @@ if analyze_btn or ticker:
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","VWAP@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 
+            # 🧱 V77: رسم المرساة الفولاذية لـ زيرو انعكاس بتطابق مع Pine Script
             with tab3:
                 df_plot = df.tail(150) if selected_interval != '1d' else df.tail(300)
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
@@ -1050,24 +1061,44 @@ if analyze_btn or ticker:
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['VWAP'], line=dict(color='#ffeb3b', width=2, dash='dot'), name='VWAP (خط الحيتان)'), row=1, col=1)
                 
-                # 🧱 V76: رسم خطوط زيرو كـ "مصفوفة متصلة" لحل مشكلة اختفائها في Plotly
+                # استخراج أحدث قمة وقاع تاريخي من البيانات
                 current_zr_high = df['ZR_High'].iloc[-1] if pd.notna(df['ZR_High'].iloc[-1]) else df_plot['High'].max()
                 current_zr_low = df['ZR_Low'].iloc[-1] if pd.notna(df['ZR_Low'].iloc[-1]) else df_plot['Low'].min()
                 
-                # إعطاء قيمة ثابتة لكل شمعة في الشارت (لكي لا ينهار الخط بسبب الفجوات الزمنية)
+                # 1. رسم السقف كجدار خرساني متصل (باستخدام dash=30px,15px المأخوذة من كودك)
                 fig.add_trace(go.Scatter(
                     x=df_plot.index, 
                     y=[current_zr_high] * len(df_plot), 
-                    mode='lines', line=dict(color='white', width=3, dash='dash'), 
-                    name=f'سقف زيرو ({current_zr_high:.4f})'
+                    mode='lines', 
+                    line=dict(color='white', width=4, dash='30px,15px'), 
+                    name=f'سقف زيرو',
+                    hoverinfo='skip'
                 ), row=1, col=1)
 
+                # 2. رسم القاع كجدار خرساني متصل 
                 fig.add_trace(go.Scatter(
                     x=df_plot.index, 
                     y=[current_zr_low] * len(df_plot), 
-                    mode='lines', line=dict(color='orange', width=3, dash='dash'), 
-                    name=f'قاع زيرو ({current_zr_low:.4f})'
+                    mode='lines', 
+                    line=dict(color='orange', width=4, dash='30px,15px'), 
+                    name=f'قاع زيرو',
+                    hoverinfo='skip'
                 ), row=1, col=1)
+                
+                # 3. صندوق بيانات زيرو يطفو فوق الشارت (استنساخ TV تماماً)
+                tv_tf = selected_interval.replace('m', '').replace('1d', 'D')
+                fig.add_annotation(
+                    x=df_plot.index[-min(10, len(df_plot)-1)],
+                    y=current_zr_high,
+                    text=f"<b>ZR | Used: 300 | TF: {tv_tf}</b><br>High: {current_zr_high:.4f}<br>Low: {current_zr_low:.4f}",
+                    showarrow=False,
+                    yshift=30,
+                    font=dict(color="white", size=10, family="Courier New"),
+                    bgcolor="rgba(26, 28, 36, 0.85)",
+                    bordercolor="rgba(255, 255, 255, 0.4)",
+                    borderwidth=1,
+                    borderpad=5
+                )
                 
                 colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]
                 fig.add_trace(go.Bar(x=df_plot.index, y=df_plot['Volume'], marker_color=colors, name='السيولة'), row=2, col=1)
@@ -1079,10 +1110,12 @@ if analyze_btn or ticker:
                 fig.add_hline(y=30, line_dash="dot", row=3, col=1, line_color="green")
                 
                 fig.update_layout(height=800, template='plotly_dark', showlegend=False, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=10, b=10))
+                
                 if selected_interval != "1d": 
                     if is_crypto_main: pass
                     elif is_fx_main: fig.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"])])
                     else: fig.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"]), dict(bounds=[16, 9], pattern="hour")])
+                
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             with tab4:

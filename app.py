@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V75 Static Zero Bounds", layout="wide", page_icon="🧱")
+st.set_page_config(page_title="منصة ماسة 💎 | V76 Fixed Zero Bounds", layout="wide", page_icon="🧱")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V75 (STATIC ZERO BOUNDS 🧱)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V76 (FIXED ZERO BOUNDS 🧱)</span>
     </div>
 </div>
 """
@@ -466,7 +466,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v75(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v76(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -539,7 +539,6 @@ def scan_market_v75(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
                 
                 zr_window = 300 if len(c) >= 300 else len(c) - 2
-                # الخوارزمية ستحتفظ بالحساب المتدحرج لاتخاذ القرارات بأمان
                 zr_h, zr_l = h.rolling(zr_window, min_periods=10).max().shift(1), l.rolling(zr_window, min_periods=10).min().shift(1)
                 
                 up_diff, down_diff = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
@@ -774,7 +773,7 @@ if analyze_btn or ticker:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
-            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v75(
+            df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v76(
                 watchlist_list=selected_watchlist, 
                 period=selected_period_scan, 
                 interval=selected_interval, 
@@ -890,7 +889,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V75_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V76_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -988,7 +987,7 @@ if analyze_btn or ticker:
                         if f'تراكمي 3 {lbl}' in df_loads_styled.columns and '3d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 3 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 3 {lbl}'], x['3d_cat']), axis=1)
                         if f'تراكمي 5 {lbl}' in df_loads_styled.columns and '5d_cat' in df_loads_styled.columns:
-                            df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 5 {lbl}'], x['5d_cat']), axis=1)
+                            df_loads_styled[f'تراكمي 5 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكم5 {lbl}'], x['5d_cat']), axis=1)
                         if f'تراكمي 10 {lbl}' in df_loads_styled.columns and '10d_cat' in df_loads_styled.columns:
                             df_loads_styled[f'تراكمي 10 {lbl}'] = df_loads_styled.apply(lambda x: format_cat(x[f'تراكمي 10 {lbl}'], x['10d_cat']), axis=1)
                         
@@ -1051,20 +1050,21 @@ if analyze_btn or ticker:
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['VWAP'], line=dict(color='#ffeb3b', width=2, dash='dot'), name='VWAP (خط الحيتان)'), row=1, col=1)
                 
-                # 🧱 V75: رسم خطوط زيرو كـ "أشعة ليزر أفقية ثابتة" بناءً على أحدث قراءة
+                # 🧱 V76: رسم خطوط زيرو كـ "مصفوفة متصلة" لحل مشكلة اختفائها في Plotly
                 current_zr_high = df['ZR_High'].iloc[-1] if pd.notna(df['ZR_High'].iloc[-1]) else df_plot['High'].max()
                 current_zr_low = df['ZR_Low'].iloc[-1] if pd.notna(df['ZR_Low'].iloc[-1]) else df_plot['Low'].min()
                 
+                # إعطاء قيمة ثابتة لكل شمعة في الشارت (لكي لا ينهار الخط بسبب الفجوات الزمنية)
                 fig.add_trace(go.Scatter(
-                    x=[df_plot.index[0], df_plot.index[-1]], 
-                    y=[current_zr_high, current_zr_high], 
+                    x=df_plot.index, 
+                    y=[current_zr_high] * len(df_plot), 
                     mode='lines', line=dict(color='white', width=3, dash='dash'), 
                     name=f'سقف زيرو ({current_zr_high:.4f})'
                 ), row=1, col=1)
 
                 fig.add_trace(go.Scatter(
-                    x=[df_plot.index[0], df_plot.index[-1]], 
-                    y=[current_zr_low, current_zr_low], 
+                    x=df_plot.index, 
+                    y=[current_zr_low] * len(df_plot), 
                     mode='lines', line=dict(color='orange', width=3, dash='dash'), 
                     name=f'قاع زيرو ({current_zr_low:.4f})'
                 ), row=1, col=1)

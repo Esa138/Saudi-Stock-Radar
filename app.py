@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V77 Zero TV Clone", layout="wide", page_icon="🎯")
+st.set_page_config(page_title="منصة ماسة 💎 | V78 Zero Radar Fix", layout="wide", page_icon="🪤")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V77 (ZERO TV CLONE 🎯)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V78 (ZERO RADAR FIX 🪤)</span>
     </div>
 </div>
 """
@@ -298,12 +298,13 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     
     is_macro_bull_stock = last_close > ma200
     is_micro_bull = last_close > ma50
-    is_bleeding = counter < 0 or "كسر" in event_text or "سلبي" in event_text or "تصحيح" in event_text or "هابط" in event_text
+    is_bleeding = counter < 0 or "كسر" in event_text or "سلبي" in event_text or "تصحيح" in event_text or "هابط" in event_text or "🕳️" in event_text
     dist_ma50 = ((last_close - ma50) / ma50) * 100 if is_micro_bull else ((ma50 - last_close) / ma50) * 100
     
     veto_max_59 = False; veto_max_79 = False; golden_watch = False
     
     is_zero_breakout = "زيرو 👑" in event_text or "سماء 🌌" in event_text
+    is_zero_breakdown = "كسر زيرو 🩸" in event_text or "انهيار سحيق 🕳️" in event_text
     is_blue_sky = pd.notna(zr_high) and last_close > zr_high
     is_zero_bottom = pd.notna(zr_low) and last_close <= zr_low * 1.05
 
@@ -340,7 +341,7 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
             reasons.append("🐋 <b>[مؤشر الحقيقة VWAP]:</b> السعر يتداول فوق متوسط تكلفة الحيتان (تجميع إيجابي مستمر).")
 
     if macro_status == "سلبي ⛈️" and not is_forex:
-        if is_zero_bottom:
+        if is_zero_bottom and not is_zero_breakdown:
             tech_score += 15
             macro_reason = "🛡️ <b>[تكتيك دفاعي]:</b> السوق ينزف، وهذا الأصل في قاع زيرو السحيق (استثناء آمن للاصطياد)."
         elif is_blue_sky and (vol_accel_ratio >= 1.2 or is_crypto):
@@ -379,13 +380,16 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     else:
         if not golden_watch: tech_score -= 20; veto_max_59 = True; reasons.append("🔴 <b>المضاربة:</b> السعر سلبي ويكسر متوسط 50 اللحظي.")
 
-    if "🚀" in event_text or "🟢" in event_text or "💎" in event_text or "📈" in event_text or "🔥" in event_text or "👑" in event_text or "🌌" in event_text: 
+    # 🚨 V78: الفيتو القاتل لكسر زيرو
+    if is_zero_breakdown:
+        tech_score -= 40; veto_max_59 = True; reasons.append("🕳️ <b>[انهيار تاريخي]:</b> السعر يكسر قاع 300 شمعة ويسقط في الهاوية. حظر دخول نهائي!")
+    elif "🚀" in event_text or "🟢" in event_text or "💎" in event_text or "📈" in event_text or "🔥" in event_text or "👑" in event_text or "🌌" in event_text: 
         tech_score += 10; reasons.append(f"⚡ <b>الحدث:</b> إشارة إيجابية داعمة في الشموع الأخيرة.")
     elif "🩸" in event_text or "🔴" in event_text or "🛑" in event_text or "⚠️" in event_text or "📉" in event_text: 
         tech_score -= 15; reasons.append(f"⚠️ <b>الحدث:</b> ضغط بيعي واضح.")
         if "كسر" in event_text: veto_max_59 = True
 
-    if is_zero_bottom and macro_status != "سلبي ⛈️": 
+    if is_zero_bottom and macro_status != "سلبي ⛈️" and not is_zero_breakdown: 
         tech_score += 10; reasons.append("🎯 <b>زيرو انعكاس:</b> السعر رخيص جداً ويختبر قاع القناة التاريخي.")
     
     if is_blue_sky:
@@ -446,6 +450,7 @@ def safe_color_table(val):
     if "👑" in val_str or "🌌" in val_str: return 'color: #ffd700; font-weight: bold; background-color: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700;'
     if "🟢" in val_str or "✅" in val_str or "🚀" in val_str or "💎" in val_str: return 'color: #00E676; font-weight: bold;'
     if "🔴" in val_str or "❌" in val_str or "🩸" in val_str or "⚠️" in val_str: return 'color: #FF5252; font-weight: bold;'
+    if "🕳️" in val_str: return 'color: #fff; font-weight: bold; background-color: #f44336; border: 1px solid #f44336;'
     if "MAJOR" in val_str: return 'font-weight: bold;'
     if "⏱️" in val_str: return 'color: #00d2ff; font-weight: bold;'
     try:
@@ -466,7 +471,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     return df
 
 @st.cache_data(ttl=900)
-def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v78(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -538,13 +543,15 @@ def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
                 h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
                 
-                # الخوارزمية تحتفظ بالنافذة المتدحرجة لاتخاذ القرارات الرياضية بدقة
+                # حساب زيرو بدقة 300 شمعة
                 zr_window = 300 if len(c) >= 300 else max(len(c) - 2, 10)
                 df_s['ZR_High'] = h.rolling(zr_window, min_periods=10).max().shift(1)
                 df_s['ZR_Low'] = l.rolling(zr_window, min_periods=10).min().shift(1)
                 
-                zr_h = df_s['ZR_High']
-                zr_l = df_s['ZR_Low']
+                last_zr_h = df_s['ZR_High'].iloc[-1] if not df_s['ZR_High'].empty else np.nan
+                prev_zr_h = df_s['ZR_High'].iloc[-2] if len(df_s) > 1 else last_zr_h
+                last_zr_l = df_s['ZR_Low'].iloc[-1] if not df_s['ZR_Low'].empty else np.nan
+                prev_zr_l = df_s['ZR_Low'].iloc[-2] if len(df_s) > 1 else last_zr_l
                 
                 up_diff, down_diff = c.diff().clip(lower=0), -1 * c.diff().clip(upper=0)
                 rsi = 100 - (100 / (1 + (up_diff.ewm(com=13, adjust=False).mean() / down_diff.ewm(com=13, adjust=False).mean())))
@@ -605,11 +612,23 @@ def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 })
 
                 bo_today, bd_today = [], []
-                if pd.notna(zr_h.iloc[-1]) and last_c > zr_h.iloc[-1]:
-                    if prev_c <= zr_h.iloc[-2]:  
+                
+                # 🪤 V78: إصلاح منطق اصطياد زيرو وإضافة الانهيار
+                if pd.notna(last_zr_h) and last_c > last_zr_h:
+                    if prev_c <= prev_zr_h:  
                         alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"اختراق سقف زيرو 👑🚀"})
                         bo_today.append("اختراق زيرو 👑")
-                    else: bo_today.append("سماء زرقاء 🌌")
+                    else: 
+                        alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"سماء زرقاء 🌌"})
+                        bo_today.append("سماء زرقاء 🌌")
+
+                if pd.notna(last_zr_l) and last_c < last_zr_l:
+                    if prev_c >= prev_zr_l:
+                        alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"كسر قاع زيرو 🩸📉"})
+                        bd_today.append("كسر زيرو 🩸")
+                    else:
+                        alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"انهيار سحيق 🕳️"})
+                        bd_today.append("انهيار سحيق 🕳️")
 
                 if last_c > h3.iloc[-1] and prev_c <= h3.iloc[-2]: bo_today.append(f"3{lbl}"); alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"اختراق 3 {lbl} 🟢"})
                 if last_c > h4.iloc[-1] and prev_c <= h4.iloc[-2]: bo_today.append(f"4{lbl}")
@@ -626,7 +645,7 @@ def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 elif pct_1d > 0 and cur_count > 0 and (is_forex or is_crypto): events.append("زخم سعري 🌊🔥"); bo_score_add += 10
                 
                 if bo_today: events.append(f"انطلاق 🚀 ({'+'.join(bo_today)})"); bo_score_add += 15
-                elif bd_today: events.append(f"كسر 🩸 ({'+'.join(bd_today)})"); bo_score_add -= 20
+                elif bd_today: events.append(f"سقوط 🩸 ({'+'.join(bd_today)})"); bo_score_add -= 20
                 elif bo_yest and last_c > h3.iloc[-1]: events.append("اختراق سابق 🟢"); bo_score_add += 10
                 elif bd_yest and last_c < l3.iloc[-1]: events.append("كسر سابق 🔴"); bo_score_add -= 15
                 else:
@@ -643,6 +662,7 @@ def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 bg_color, text_color, border_color = "transparent", "gray", "gray"
                 if "👑" in event_text or "🌌" in event_text: bg_color, text_color, border_color = "rgba(255, 215, 0, 0.15)", "#FFD700", "rgba(255, 215, 0, 0.8)"
                 elif any(x in event_text for x in ["🚀", "🟢", "💎", "📈", "🔥"]): bg_color, text_color, border_color = "rgba(0, 230, 118, 0.12)", "#00E676", "rgba(0, 230, 118, 0.5)"
+                elif "🕳️" in event_text: bg_color, text_color, border_color = "#f44336", "#fff", "#fff"
                 elif any(x in event_text for x in ["🩸", "🔴", "🛑", "📉"]): bg_color, text_color, border_color = "rgba(255, 82, 82, 0.12)", "#FF5252", "rgba(255, 82, 82, 0.5)"
                 elif "⚠️" in event_text: bg_color, text_color, border_color = "rgba(255, 215, 0, 0.12)", "#FFD700", "rgba(255, 215, 0, 0.5)"
                 ch_badge = f"<span class='bo-badge' style='background-color:{bg_color}; color:{text_color}; border: 1px solid {border_color};'>{event_text}</span>"
@@ -657,11 +677,11 @@ def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 min_target = last_c + (risk * 2.0) 
 
-                if pd.notna(zr_h.iloc[-1]) and last_c > zr_h.iloc[-1]:
+                if pd.notna(last_zr_h) and last_c > last_zr_h:
                     target_val = last_c + (risk * 3.0)
                     target_disp = "سماء مفتوحة 🚀"
                 else:
-                    natural_target = zr_h.iloc[-1] if pd.notna(zr_h.iloc[-1]) else last_c * 1.05
+                    natural_target = last_zr_h if pd.notna(last_zr_h) else last_c * 1.05
                     target_val = max(natural_target, min_target)
                     target_disp = format_price(target_val, tk)
 
@@ -669,7 +689,7 @@ def scan_market_v77(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 mom_score = calc_momentum_score(pct_1d, pct_5d, pct_10d, vol_ratio)
                 
-                ai_score, ai_dec, ai_col, reasons_list = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, zr_l.iloc[-1], zr_h.iloc[-1], event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d, macro_status, is_forex, is_crypto, last_vwap, rr_ratio, daily_trend, interval)
+                ai_score, ai_dec, ai_col, reasons_list = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, last_zr_l, last_zr_h, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d, macro_status, is_forex, is_crypto, last_vwap, rr_ratio, daily_trend, interval)
                 
                 price_disp = format_price(last_c, tk)
                 sl_disp = format_price(sl, tk)
@@ -772,7 +792,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق لـ ({display_name}) مع تفعيل [مصفوفة التوافق الزمني MTF]..."):
         
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks, df = scan_market_v77(
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks, df = scan_market_v78(
             watchlist_list=selected_watchlist, 
             period=selected_period_scan, 
             interval=selected_interval, 
@@ -825,7 +845,6 @@ if analyze_btn or ticker:
             ema_up, ema_down = up.ewm(com=13, adjust=False).mean(), down.ewm(com=13, adjust=False).mean()
             df['RSI'] = 100 - (100 / (1 + (ema_up / ema_down)))
 
-            # ⚓ تطبيق محرك المرساة الرئيسي إذا لم يأتِ من الماسح
             if 'ZR_High' not in df.columns:
                 zr_window = 300 if len(close) >= 300 else max(len(close) - 2, 10)
                 df['ZR_High'] = high.rolling(zr_window, min_periods=10).max().shift(1)
@@ -868,7 +887,7 @@ if analyze_btn or ticker:
             with tab_vip:
                 if not df_ai_picks.empty:
                     df_vip_full = pd.DataFrame(df_ai_picks)
-                    df_vip = df_vip_full[(df_vip_full['raw_score'] >= 80) & (df_vip_full['raw_mom'] >= 75) & (~df_vip_full['raw_events'].str.contains('كسر|هابط|تصحيح'))].sort_values(by=['raw_score', 'raw_mom'], ascending=[False, False]).head(3)
+                    df_vip = df_vip_full[(df_vip_full['raw_score'] >= 80) & (df_vip_full['raw_mom'] >= 75) & (~df_vip_full['raw_events'].str.contains('كسر|هابط|تصحيح|🕳️'))].sort_values(by=['raw_score', 'raw_mom'], ascending=[False, False]).head(3)
                     if not df_vip.empty:
                         st.markdown("<h3 style='text-align: center; color: #ffd700; font-weight: 900; margin-bottom: 5px;'>👑 الصندوق الأسود: أقوى الفرص الاستثمارية الآن</h3>", unsafe_allow_html=True)
                         col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
@@ -899,7 +918,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V77_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V78_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -1050,7 +1069,6 @@ if analyze_btn or ticker:
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","VWAP@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 
-            # 🧱 V77: رسم المرساة الفولاذية لـ زيرو انعكاس بتطابق مع Pine Script
             with tab3:
                 df_plot = df.tail(150) if selected_interval != '1d' else df.tail(300)
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
@@ -1061,43 +1079,29 @@ if analyze_btn or ticker:
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['SMA_50'], line=dict(color='#00bcd4', width=2), name='MA 50'), row=1, col=1)  
                 fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot['VWAP'], line=dict(color='#ffeb3b', width=2, dash='dot'), name='VWAP (خط الحيتان)'), row=1, col=1)
                 
-                # استخراج أحدث قمة وقاع تاريخي من البيانات
                 current_zr_high = df['ZR_High'].iloc[-1] if pd.notna(df['ZR_High'].iloc[-1]) else df_plot['High'].max()
                 current_zr_low = df['ZR_Low'].iloc[-1] if pd.notna(df['ZR_Low'].iloc[-1]) else df_plot['Low'].min()
                 
-                # 1. رسم السقف كجدار خرساني متصل (باستخدام dash=30px,15px المأخوذة من كودك)
                 fig.add_trace(go.Scatter(
                     x=df_plot.index, 
                     y=[current_zr_high] * len(df_plot), 
-                    mode='lines', 
-                    line=dict(color='white', width=4, dash='30px,15px'), 
-                    name=f'سقف زيرو',
-                    hoverinfo='skip'
+                    mode='lines', line=dict(color='white', width=4, dash='30px,15px'), 
+                    name=f'سقف زيرو', hoverinfo='skip'
                 ), row=1, col=1)
 
-                # 2. رسم القاع كجدار خرساني متصل 
                 fig.add_trace(go.Scatter(
                     x=df_plot.index, 
                     y=[current_zr_low] * len(df_plot), 
-                    mode='lines', 
-                    line=dict(color='orange', width=4, dash='30px,15px'), 
-                    name=f'قاع زيرو',
-                    hoverinfo='skip'
+                    mode='lines', line=dict(color='orange', width=4, dash='30px,15px'), 
+                    name=f'قاع زيرو', hoverinfo='skip'
                 ), row=1, col=1)
                 
-                # 3. صندوق بيانات زيرو يطفو فوق الشارت (استنساخ TV تماماً)
                 tv_tf = selected_interval.replace('m', '').replace('1d', 'D')
                 fig.add_annotation(
-                    x=df_plot.index[-min(10, len(df_plot)-1)],
-                    y=current_zr_high,
+                    x=df_plot.index[-min(10, len(df_plot)-1)], y=current_zr_high,
                     text=f"<b>ZR | Used: 300 | TF: {tv_tf}</b><br>High: {current_zr_high:.4f}<br>Low: {current_zr_low:.4f}",
-                    showarrow=False,
-                    yshift=30,
-                    font=dict(color="white", size=10, family="Courier New"),
-                    bgcolor="rgba(26, 28, 36, 0.85)",
-                    bordercolor="rgba(255, 255, 255, 0.4)",
-                    borderwidth=1,
-                    borderpad=5
+                    showarrow=False, yshift=30, font=dict(color="white", size=10, family="Courier New"),
+                    bgcolor="rgba(26, 28, 36, 0.85)", bordercolor="rgba(255, 255, 255, 0.4)", borderwidth=1, borderpad=5
                 )
                 
                 colors = ['green' if row['Close'] >= row['Open'] else 'red' for index, row in df_plot.iterrows()]

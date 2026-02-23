@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V87 Halal Wall Street", layout="wide", page_icon="🕋")
+st.set_page_config(page_title="منصة ماسة 💎 | V88 Live Tracker", layout="wide", page_icon="📡")
 
 DB_FILE = "masa_database.db"
 
@@ -27,6 +27,11 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS tracker 
                  (date_time TEXT, market TEXT, ticker TEXT, company TEXT, 
                   entry REAL, target REAL, stop_loss REAL, score TEXT, mom TEXT, date_only TEXT)''')
+    # 📡 V88: إضافة عمود الفريم الزمني بأمان دون تحطيم قواعد البيانات القديمة
+    try:
+        c.execute("ALTER TABLE tracker ADD COLUMN timeframe TEXT DEFAULT 'غير محدد'")
+    except:
+        pass
     conn.commit()
     conn.close()
 
@@ -114,7 +119,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V87 (HALAL WALL STREET 🕋)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V88 (LIVE TRACKER 📡)</span>
     </div>
 </div>
 """
@@ -181,33 +186,15 @@ SAUDI_NAMES = {
     '8010.SR': 'التعاونية', '8012.SR': 'الجزيرة تكافل', '8020.SR': 'ملاذ للتأمين', '8030.SR': 'ميدغلف', '8040.SR': 'أليانز', '8050.SR': 'سلامة', '8060.SR': 'ولاء', '8070.SR': 'الدرع العربي', '8100.SR': 'سايكو', '8120.SR': 'اتحاد الخليج', '8150.SR': 'أسيج', '8160.SR': 'التأمين العربية', '8200.SR': 'إعادة', '8210.SR': 'بوبا', '8230.SR': 'تكافل الراجحي', '8240.SR': 'تشب', '8250.SR': 'عناية', '8260.SR': 'أمانة للتأمين', '8270.SR': 'بروج', '8280.SR': 'العالمية'
 }
 
-# 🕋 V87: قائمة السوق الأمريكي المطهرة (تم حذف البنوك، التمويل، التأمين التجاري، والترفيه المحرم)
 US_NAMES = {
-    # 💻 التكنولوجيا والذكاء الاصطناعي (Tech & AI)
     'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'NVIDIA', 'GOOGL': 'Alphabet', 'AMZN': 'Amazon', 'META': 'Meta', 'TSLA': 'Tesla', 'SMCI': 'Super Micro', 'DELL': 'Dell Technologies',
-    
-    # 🧠 أشباه الموصلات (Semiconductors - ملوك السيولة حالياً)
     'AMD': 'AMD', 'AVGO': 'Broadcom', 'TSM': 'TSMC', 'MU': 'Micron', 'ASML': 'ASML Holding', 'ARM': 'ARM Holdings', 'LRCX': 'Lam Research', 'AMAT': 'Applied Materials', 'INTC': 'Intel', 'QCOM': 'Qualcomm', 'TXN': 'Texas Instruments', 'KLAC': 'KLA Corp', 'MRVL': 'Marvell', 'NXPI': 'NXP Semi',
-    
-    # ☁️ السحابيات والأمن السيبراني والبرمجيات (Cloud, Cyber & SaaS)
     'CRM': 'Salesforce', 'ADBE': 'Adobe', 'ORCL': 'Oracle', 'NOW': 'ServiceNow', 'SNOW': 'Snowflake', 'PLTR': 'Palantir', 'DDOG': 'Datadog', 'MDB': 'MongoDB', 'TEAM': 'Atlassian', 'CDNS': 'Cadence Design', 'SNPS': 'Synopsys', 'SHOP': 'Shopify', 'UBER': 'Uber', 'NET': 'Cloudflare', 'CRWD': 'CrowdStrike', 'PANW': 'Palo Alto', 'FTNT': 'Fortinet', 'ZS': 'Zscaler', 'HUBS': 'HubSpot',
-    
-    # 🛒 التجزئة والسلع الاستهلاكية (بدون كحوليات أو كازينوهات)
     'WMT': 'Walmart', 'HD': 'Home Depot', 'COST': 'Costco', 'MCD': 'McDonalds', 'SBUX': 'Starbucks', 'NKE': 'Nike', 'LULU': 'Lululemon', 'LOW': 'Lowe\'s', 'PG': 'Procter & Gamble', 'KO': 'Coca-Cola', 'PEP': 'PepsiCo', 'TGT': 'Target', 'CMG': 'Chipotle', 'TJX': 'TJX Companies',
-    
-    # ⚕️ الرعاية الصحية والأدوية والتكنولوجيا الحيوية
     'LLY': 'Eli Lilly', 'JNJ': 'Johnson & Johnson', 'ABBV': 'AbbVie', 'MRK': 'Merck', 'PFE': 'Pfizer', 'ISRG': 'Intuitive Surg', 'VRTX': 'Vertex Pharma', 'REGN': 'Regeneron', 'AMGN': 'Amgen', 'GILD': 'Gilead Sciences', 'TMO': 'Thermo Fisher', 'DHR': 'Danaher', 'ABT': 'Abbott', 'SYK': 'Stryker', 'ZTS': 'Zoetis',
-    
-    # 🏭 الصناعة والطاقة النظيفة والسيارات
     'CAT': 'Caterpillar', 'BA': 'Boeing', 'GE': 'General Electric', 'XOM': 'Exxon Mobil', 'CVX': 'Chevron', 'SLB': 'Schlumberger', 'COP': 'ConocoPhillips', 'RIVN': 'Rivian', 'LCID': 'Lucid Motors', 'F': 'Ford', 'GM': 'General Motors', 'UNP': 'Union Pacific', 'UPS': 'UPS', 'FDX': 'FedEx', 'DE': 'Deere & Co', 'LMT': 'Lockheed Martin', 'RTX': 'RTX Corp', 'FSLR': 'First Solar', 'ENPH': 'Enphase Energy', 'NEE': 'NextEra Energy',
-    
-    # 📡 الاتصالات والإعلام والسفر
     'NFLX': 'Netflix', 'VZ': 'Verizon', 'T': 'AT&T', 'TMUS': 'T-Mobile', 'SPOT': 'Spotify', 'BKNG': 'Booking', 'ABNB': 'Airbnb',
-    
-    # ⛏️ البنية التحتية للكريبتو (تعدين ومنصات تقنية نقية)
     'COIN': 'Coinbase', 'MSTR': 'MicroStrategy', 'MARA': 'Marathon Digital', 'RIOT': 'Riot Platforms', 'CLSK': 'CleanSpark', 'HUT': 'Hut 8',
-    
-    # 🕌 صناديق المؤشرات الإسلامية والتقنية (Halal & Tech ETFs)
     'SPUS': 'S&P 500 Sharia ETF', 'HLAL': 'Wahed FTSE Sharia ETF', 'UMMA': 'Wahed Dow Jones Islamic ETF', 'SPSK': 'SP Funds Sukuk ETF', 'SMH': 'Semiconductor ETF', 'SOXX': 'iShares Semi ETF', 'XLK': 'Technology ETF', 'XLV': 'Health Care ETF', 'XLE': 'Energy ETF', 'XLI': 'Industrial ETF'
 }
 
@@ -270,7 +257,8 @@ def get_macro_status(market_choice):
         return status, name, pct_change, last_c
     except Exception: return "تذبذب ⛅", name, 0.0, 0.0
 
-def save_to_tracker_sql(df_vip, market):
+# 📡 V88: دالة حفظ متطورة لتخزين "الفريم الزمني" و "السوق" بوضوح
+def save_to_tracker_sql(df_vip, market_name, tf_label):
     if df_vip.empty: return False
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -278,11 +266,19 @@ def save_to_tracker_sql(df_vip, market):
         date_time = str(row['raw_time']).replace('⏱️ ', '')
         date_only = date_time.split(' | ')[1] if ' | ' in date_time else date_time
         ticker = str(row['الرمز'])
-        c.execute("SELECT 1 FROM tracker WHERE date_only=? AND ticker=?", (date_only, ticker))
+        
+        # تجنب التكرار بناءً على الرمز والتاريخ والفريم
+        c.execute("SELECT 1 FROM tracker WHERE date_only=? AND ticker=? AND timeframe=?", (date_only, ticker, tf_label))
         if not c.fetchone():
-            c.execute('''INSERT INTO tracker (date_time, market, ticker, company, entry, target, stop_loss, score, mom, date_only)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (date_time, market, ticker, str(row['الشركة']), float(row['raw_price']), float(row['raw_target']), float(row['raw_sl']), str(row['raw_score']), str(row['raw_mom']), date_only))
+            try:
+                c.execute('''INSERT INTO tracker (date_time, market, ticker, company, entry, target, stop_loss, score, mom, date_only, timeframe)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (date_time, market_name, ticker, str(row['الشركة']), float(row['raw_price']), float(row['raw_target']), float(row['raw_sl']), str(row['raw_score']), str(row['raw_mom']), date_only, tf_label))
+            except sqlite3.OperationalError:
+                # Fallback للنسخ القديمة جداً لو لم يتم عمل alter table
+                c.execute('''INSERT INTO tracker (date_time, market, ticker, company, entry, target, stop_loss, score, mom, date_only)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (date_time, market_name, ticker, str(row['الشركة']), float(row['raw_price']), float(row['raw_target']), float(row['raw_sl']), str(row['raw_score']), str(row['raw_mom']), date_only))
     conn.commit()
     conn.close()
     return True
@@ -497,7 +493,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     except Exception: return pd.DataFrame() 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def scan_market_v87(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v88(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -800,7 +796,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name})..."):
         
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v87(
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v88(
             watchlist_list=selected_watchlist, period=selected_period_scan, interval=selected_interval, lbl=lbl, tf_label=tf_label_name, macro_status=macro_status
         )
         
@@ -896,8 +892,10 @@ if analyze_btn or ticker:
                         st.markdown("<h3 style='text-align: center; color: #ffd700; font-weight: 900; margin-bottom: 5px;'>👑 الصندوق الأسود: أقوى الفرص الاستثمارية الآن</h3>", unsafe_allow_html=True)
                         col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
                         with col_btn2:
+                            # 📡 V88: تمرير الفريم الزمني عند الحفظ للتمكن من الفلترة في المراقبة
+                            market_clean = market_choice.split()[0]
                             if st.button("💾 حفظ هذه الفرص في محفظة المراقبة", use_container_width=True):
-                                save_to_tracker_sql(df_vip, market_choice)
+                                save_to_tracker_sql(df_vip, market_clean, tf_label_name)
                                 st.success("✅ تم الحفظ بنجاح! راجع تبويب (المراقبة 📂)")
                         cards_html = "<div class='vip-container'>"
                         for _, row in df_vip.iterrows():
@@ -922,7 +920,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V87_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V88_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -1054,14 +1052,12 @@ if analyze_btn or ticker:
 
             with tab_backtest:
                 st.markdown(f"<h3 style='text-align: center; color: #FFD700;'>⏳ السجل التاريخي لـ ({display_name})</h3>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center; color: gray;'>يقوم هذا المحرك بفحص آخر 150 شمعة واستخراج الأحداث المفصلية التي مرت على السهم. (تم تفعيل فلتر الذكاء الاصطناعي لمنع التكرار 🧠).</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: gray;'>يقوم هذا المحرك بفحص آخر 150 شمعة واستخراج الأحداث المفصلية التي مرت على السهم.</p>", unsafe_allow_html=True)
                 
                 try:
                     df_bt = df.tail(150).copy()
                     bt_logs = []
-                    
-                    zr_state = "inside" 
-                    ma_state = "neutral"
+                    zr_state, ma_state = "inside", "neutral"
                     
                     for i in range(1, len(df_bt)):
                         prev = df_bt.iloc[i-1]
@@ -1080,12 +1076,9 @@ if analyze_btn or ticker:
                                     bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🩸 كسر قاع زيرو (انهيار) 🕳️"})
                                     zr_state = "below" 
                             else:
-                                if zr_state == "above" and curr['Close'] < (curr['ZR_High'] * 0.985):
-                                    zr_state = "inside"
-                                elif zr_state == "below" and curr['Close'] > (curr['ZR_Low'] * 1.015):
-                                    zr_state = "inside"
-                                elif zr_state not in ["above", "below"]:
-                                    zr_state = "inside"
+                                if zr_state == "above" and curr['Close'] < (curr['ZR_High'] * 0.985): zr_state = "inside"
+                                elif zr_state == "below" and curr['Close'] > (curr['ZR_Low'] * 1.015): zr_state = "inside"
+                                elif zr_state not in ["above", "below"]: zr_state = "inside"
                         
                         if pd.notna(curr.get('SMA_50')):
                             if curr['Close'] > curr['SMA_50']:
@@ -1105,28 +1098,131 @@ if analyze_btn or ticker:
                         styler_bt = df_bt_res.style.applymap(safe_color_table, subset=['الحدث التاريخي']) if hasattr(df_bt_res.style, 'applymap') else df_bt_res.style.map(safe_color_table, subset=['الحدث التاريخي'])
                         st.dataframe(styler_bt, use_container_width=True, height=500)
                     else:
-                        st.info("لم يمر السهم بأي أحداث مفصلية (اختراق/كسر) خلال الـ 150 شمعة الماضية، مساره كان عرضياً أو مستقراً.")
+                        st.info("لم يمر السهم بأي أحداث مفصلية خلال الـ 150 شمعة الماضية.")
                 except Exception as e:
                     st.error(f"⚠️ حدث خطأ في بناء الباك تيست: {str(e)}")
 
+            # 📡 V88: المحفظة الحية (Live Tracking Terminal)
             with tab_track:
-                st.markdown("<h3 style='text-align: center; color: #00d2ff;'>📂 محفظة المراقبة (سجل صفقات الـ VIP)</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='text-align: center; color: #00d2ff;'>📂 محفظة المراقبة الحية (Live Tracker)</h3>", unsafe_allow_html=True)
+                
                 try:
                     conn = sqlite3.connect(DB_FILE)
-                    df_saved = pd.read_sql_query("SELECT date_time AS 'وقت الرصد', market AS 'السوق', ticker AS 'الرمز', company AS 'الشركة', entry AS 'سعر الدخول', target AS 'الهدف', stop_loss AS 'الوقف', score AS 'التقييم', mom AS 'الزخم' FROM tracker ORDER BY date_time DESC", conn)
+                    # قراءة البيانات مع ضمان وجود عمود الفريم حتى لو كانت المحفظة قديمة
+                    df_saved = pd.read_sql_query("SELECT * FROM tracker ORDER BY date_time DESC", conn)
+                    
                     if not df_saved.empty:
-                        st.dataframe(df_saved, use_container_width=True)
+                        # 🗂️ فلاتر الفرز الذكية
+                        c_f1, c_f2, c_btn = st.columns([2, 2, 1.5])
+                        
+                        with c_f1:
+                            markets_opts = ["الكل"] + sorted(df_saved['market'].dropna().unique().tolist())
+                            sel_market = st.selectbox("🌐 تصفية حسب السوق:", markets_opts)
+                        
+                        with c_f2:
+                            if 'timeframe' in df_saved.columns:
+                                tf_opts = ["الكل"] + sorted(df_saved['timeframe'].dropna().unique().tolist())
+                            else:
+                                tf_opts = ["الكل"]
+                            sel_tf = st.selectbox("⏳ تصفية حسب الفريم:", tf_opts)
+                            
+                        with c_btn:
+                            st.write("")
+                            st.write("")
+                            refresh_btn = st.button("🔄 تحديث الأسعار والأرباح", type="primary", use_container_width=True)
+
+                        # تطبيق الفلاتر
+                        df_filtered = df_saved.copy()
+                        if sel_market != "الكل": df_filtered = df_filtered[df_filtered['market'] == sel_market]
+                        if sel_tf != "الكل" and 'timeframe' in df_filtered.columns: df_filtered = df_filtered[df_filtered['timeframe'] == sel_tf]
+                        
+                        if df_filtered.empty:
+                            st.warning("لا توجد صفقات محفوظة تطابق خيارات الفلترة الحالية.")
+                        else:
+                            # 🔄 محرك التتبع المباشر (عند الضغط على الزر)
+                            if refresh_btn:
+                                with st.spinner("📡 جاري الاتصال بالبورصة لجلب الأسعار الحية..."):
+                                    unique_tickers = df_filtered['ticker'].unique()
+                                    live_prices = {}
+                                    
+                                    try:
+                                        # الجلب الجماعي السريع
+                                        tk_str = " ".join(unique_tickers)
+                                        data = yf.Tickers(tk_str).history(period="1d")
+                                        if not data.empty and 'Close' in data:
+                                            closes = data['Close']
+                                            if isinstance(closes, pd.Series):
+                                                # Only one ticker returned
+                                                live_prices[unique_tickers[0]] = closes.iloc[-1]
+                                            else:
+                                                for tk in unique_tickers:
+                                                    if tk in closes.columns and not pd.isna(closes[tk].iloc[-1]):
+                                                        live_prices[tk] = closes[tk].iloc[-1]
+                                    except: pass
+                                    
+                                    # إكمال النواقص لو فشل الجلب الجماعي
+                                    for tk in unique_tickers:
+                                        if tk not in live_prices:
+                                            try: live_prices[tk] = yf.Ticker(tk).history(period="1d")['Close'].iloc[-1]
+                                            except: pass
+                                            
+                                    st.session_state['live_prices'] = live_prices
+
+                            # بناء جدول العرض
+                            display_records = []
+                            for _, r in df_filtered.iterrows():
+                                tk = r['ticker']
+                                entry = float(r['entry'])
+                                tgt = float(r['target'])
+                                sl = float(r['stop_loss'])
+                                
+                                live_p = st.session_state.get('live_prices', {}).get(tk, entry)
+                                pnl = ((live_p - entry) / entry) * 100 if entry > 0 else 0
+                                
+                                if live_p >= tgt: status = "🎯 تحقق الهدف"
+                                elif live_p <= sl: status = "🩸 ضرب الوقف"
+                                else: status = "⏳ جارية"
+                                
+                                display_records.append({
+                                    "وقت الرصد": r['date_time'],
+                                    "السوق": r['market'],
+                                    "الفريم": r.get('timeframe', 'غير محدد'),
+                                    "الشركة": r['company'],
+                                    "الرمز": tk,
+                                    "سعر الدخول": f"{entry:.2f}",
+                                    "الهدف": f"{tgt:.2f}",
+                                    "الوقف": f"{sl:.2f}",
+                                    "السعر اللحظي 📡": f"{live_p:.2f}",
+                                    "نسبة الربح/الخسارة": f"{pnl:+.2f}%",
+                                    "حالة الصفقة": status
+                                })
+                            
+                            if display_records:
+                                df_live = pd.DataFrame(display_records)
+                                
+                                def style_live(val):
+                                    v = str(val)
+                                    if "🎯" in v or ("+" in v and "%" in v): return 'color: #00E676; font-weight: bold; background-color: rgba(0,230,118,0.1);'
+                                    if "🩸" in v or ("-" in v and "%" in v): return 'color: #FF5252; font-weight: bold; background-color: rgba(255,82,82,0.1);'
+                                    if "⏳" in v: return 'color: #FFD700; font-weight: bold;'
+                                    return ''
+                                    
+                                styler = df_live.style.applymap(style_live, subset=['نسبة الربح/الخسارة', 'حالة الصفقة']) if hasattr(df_live.style, 'applymap') else df_live.style.map(style_live, subset=['نسبة الربح/الخسارة', 'حالة الصفقة'])
+                                st.dataframe(styler, use_container_width=True, hide_index=True)
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
                         col_del1, col_del2, col_del3 = st.columns([1,1,1])
                         with col_del2:
-                            if st.button("🗑️ مسح السجل بالكامل", type="secondary", use_container_width=True):
+                            if st.button("🗑️ تنظيف المحفظة بالكامل (مسح السجل)", type="secondary", use_container_width=True):
                                 cur = conn.cursor()
                                 cur.execute("DELETE FROM tracker")
                                 conn.commit()
                                 st.rerun() if hasattr(st, 'rerun') else st.experimental_rerun()
+                                
                     else:
-                        st.info("📂 المحفظة فارغة حالياً. اذهب إلى (👑 VIP ماسة) واضغط على زر [حفظ هذه الفرص] لإضافتها هنا.")
+                        st.info("📂 المحفظة فارغة و(نظيفة من الأسهم القديمة). اذهب إلى (👑 VIP ماسة) واضغط على زر [حفظ هذه الفرص] لإضافتها هنا ومتابعتها لحظياً.")
                 except Exception as e:
-                    st.error("حدث خطأ في قراءة قاعدة البيانات.")
+                    st.error(f"حدث خطأ في قراءة قاعدة البيانات: {e}")
                 finally:
                     if 'conn' in locals(): conn.close()
 

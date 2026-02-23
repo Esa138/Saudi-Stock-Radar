@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V80 The Perfect Core", layout="wide", page_icon="🧩")
+st.set_page_config(page_title="منصة ماسة 💎 | V83 Force Sync", layout="wide", page_icon="⚡")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V80 (THE PERFECT CORE 🧩)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V83 (FORCE SYNC ⚡)</span>
     </div>
 </div>
 """
@@ -304,7 +304,7 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     veto_max_59 = False; veto_max_79 = False; golden_watch = False
     
     is_zero_breakout = "زيرو 👑" in event_text or "سماء 🌌" in event_text
-    is_zero_breakdown = "كسر زيرو 🩸" in event_text or "انهيار سحيق 🕳️" in event_text
+    is_zero_breakdown = "كسر زيرو 🩸" in event_text or "انهيار سحيق 🕳️" in event_text or "سقوط 🩸" in event_text
     is_blue_sky = pd.notna(zr_high) and last_close > zr_high
     is_zero_bottom = pd.notna(zr_low) and last_close <= zr_low * 1.05
 
@@ -427,24 +427,23 @@ def get_ai_analysis(last_close, ma50, ma200, rsi, counter, zr_low, zr_high, even
     return final_score, dec, col, reasons
 
 def get_cat(val):
-    if pd.isna(val) or val == "": return ""
     try:
+        if pd.isna(val) or val == "" or np.isinf(float(val)): return ""
         v = abs(float(val))
         if v >= 1.0: return "MAJOR"
         elif v >= 0.1: return "HIGH"
         else: return "MEDIUM"
     except: return ""
 
-# 🧩 V80: إعادة الكلمات المفقودة (MAJOR, HIGH) إلى المخرجات
 def format_cat(val, cat):
-    if pd.isna(val) or val == "": return ""
     try:
+        if pd.isna(val) or val == "" or np.isinf(float(val)): return "⚪ 0.00%"
         f_val = float(val)
         cat_str = f" {cat}" if cat else ""
         if f_val > 0: return f"🟢 +{f_val:.2f}%{cat_str}"
         elif f_val < 0: return f"🔴 {f_val:.2f}%{cat_str}"
         return f"⚪ 0.00%{cat_str}"
-    except: return str(val)
+    except: return "⚪ 0.00%"
 
 def safe_color_table(val):
     val_str = str(val)
@@ -469,18 +468,15 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     try:
         tk = yf.Ticker(str(ticker_symbol))
         df = tk.history(period=period, interval=interval)
-        if df is None or df.empty:
-            return pd.DataFrame()
+        if df is None or df.empty: return pd.DataFrame()
         df = df.copy()
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
+        if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
         df = localize_timezone(df)
         return df
-    except Exception:
-        return pd.DataFrame() 
+    except Exception: return pd.DataFrame() 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v83(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -497,8 +493,7 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
             t_obj = yf.Ticker(tk)
             df = t_obj.history(period=period, interval=interval)
             if df.empty: return tk, None, None
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
             df = localize_timezone(df)
             
             df_1d = None
@@ -506,11 +501,9 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 try:
                     df_1d_raw = t_obj.history(period="1y", interval="1d")
                     if not df_1d_raw.empty:
-                        if isinstance(df_1d_raw.columns, pd.MultiIndex):
-                            df_1d_raw.columns = df_1d_raw.columns.get_level_values(0)
+                        if isinstance(df_1d_raw.columns, pd.MultiIndex): df_1d_raw.columns = df_1d_raw.columns.get_level_values(0)
                         df_1d = localize_timezone(df_1d_raw)
                 except: pass
-                
             if len(df) > 30: return tk, df, df_1d
         except Exception: pass
         return tk, None, None
@@ -544,8 +537,7 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 atr = tr.rolling(14).mean()
                 last_atr = atr.iloc[-1] if pd.notna(atr.iloc[-1]) and atr.iloc[-1] > 0 else (c.iloc[-1] * 0.02)
                 
-                if vol.sum() == 0 or is_forex:
-                    vwap = c.rolling(20).mean()
+                if vol.sum() == 0 or is_forex: vwap = c.rolling(20).mean()
                 else:
                     typical_price = (h + l + c) / 3
                     vwap = (typical_price * vol).rolling(20).sum() / vol.rolling(20).sum()
@@ -571,18 +563,15 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 
                 daily_trend = "صاعد ☀️"
                 if interval == "1d":
-                    if pd.notna(ma50.iloc[-1]) and last_c < ma50.iloc[-1]: 
-                        daily_trend = "هابط ⛈️"
+                    if pd.notna(ma50.iloc[-1]) and last_c < ma50.iloc[-1]: daily_trend = "هابط ⛈️"
                 else:
                     if df_1d is not None and not df_1d.empty and len(df_1d) > 50:
                         d_c = df_1d['Close'].dropna()
                         if not d_c.empty:
                             d_ma50 = d_c.rolling(50).mean().iloc[-1]
-                            if d_c.iloc[-1] < d_ma50:
-                                daily_trend = "هابط ⛈️"
+                            if d_c.iloc[-1] < d_ma50: daily_trend = "هابط ⛈️"
                 
-                if is_forex or is_crypto:
-                    vol_ratio = 1.0; vol_accel_ratio = 1.0
+                if is_forex or is_crypto: vol_ratio, vol_accel_ratio = 1.0, 1.0
                 else:
                     last_vol = vol.iloc[-1] if pd.notna(vol.iloc[-1]) and vol.iloc[-1] > 0 else 1000000
                     avg_vol = v_sma20.iloc[-1] if pd.notna(v_sma20.iloc[-1]) and v_sma20.iloc[-1] > 0 else 1000000
@@ -600,11 +589,8 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                     counters.append(counter)
                 cur_count = counters[-1]
                 
-                current_time_str = now_internal.strftime("⏱️ %H:%M | %Y-%m-%d")
-                if interval == "1d": candle_time = current_time_str
-                else:
-                    try: candle_time = df_s.index[-1].strftime("⏱️ %H:%M | %Y-%m-%d")
-                    except: candle_time = current_time_str
+                try: candle_time = now_internal.strftime("⏱️ %H:%M | %Y-%m-%d") if interval == "1d" else df_s.index[-1].strftime("⏱️ %H:%M | %Y-%m-%d")
+                except: candle_time = now_internal.strftime("⏱️ %H:%M | %Y-%m-%d")
                 full_time_str = candle_time
 
                 pct_1d = (last_c / prev_c - 1) * 100 if len(c)>1 and prev_c != 0 else 0
@@ -614,13 +600,7 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
 
                 cat_1d, cat_3d, cat_5d, cat_10d = get_cat(pct_1d), get_cat(pct_3d), get_cat(pct_5d), get_cat(pct_10d)
                 
-                loads_list.append({
-                    "الشركة": stock_name, "التاريخ": candle_time, "الاتجاه": int(cur_count), col_count: abs(cur_count), 
-                    col_change: pct_1d, "1d_cat": cat_1d, f"تراكمي 3 {lbl}": pct_3d, "3d_cat": cat_3d, 
-                    f"تراكمي 5 {lbl}": pct_5d, "5d_cat": cat_5d, f"تراكمي 10 {lbl}": pct_10d, "10d_cat": cat_10d,
-                    f"حالة 3 {lbl}": "✅" if pct_3d > 0 else "❌", f"حالة 5 {lbl}": "✅" if pct_5d > 0 else "❌", f"حالة 10 {lbl}": "✅" if pct_10d > 0 else "❌",
-                    "raw_3d": pct_3d, "raw_5d": pct_5d, "raw_10d": pct_10d
-                })
+                loads_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الاتجاه": int(cur_count), col_count: abs(cur_count), col_change: pct_1d, "1d_cat": cat_1d, f"تراكمي 3 {lbl}": pct_3d, "3d_cat": cat_3d, f"تراكمي 5 {lbl}": pct_5d, "5d_cat": cat_5d, f"تراكمي 10 {lbl}": pct_10d, "10d_cat": cat_10d, f"حالة 3 {lbl}": "✅" if pct_3d > 0 else "❌", f"حالة 5 {lbl}": "✅" if pct_5d > 0 else "❌", f"حالة 10 {lbl}": "✅" if pct_10d > 0 else "❌", "raw_3d": pct_3d, "raw_5d": pct_5d, "raw_10d": pct_10d})
 
                 bo_today, bd_today = [], []
                 
@@ -638,7 +618,7 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                         bd_today.append("كسر زيرو 🩸")
                     else:
                         alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"انهيار سحيق 🕳️"})
-                        bd_today.append("انهيار سحيق 🕳️")
+                        bd_today.append("سقوط 🩸")
 
                 if last_c > h3.iloc[-1] and prev_c <= h3.iloc[-2]: bo_today.append(f"3{lbl}"); alerts_list.append({"الشركة": stock_name, "التاريخ": candle_time, "الفريم": tf_label, "التنبيه": f"اختراق 3 {lbl} 🟢"})
                 if last_c > h4.iloc[-1] and prev_c <= h4.iloc[-2]: bo_today.append(f"4{lbl}")
@@ -696,9 +676,7 @@ def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                     target_disp = format_price(target_val, tk)
 
                 rr_ratio = (target_val - last_c) / risk if risk > 0 else 0
-
                 mom_score = calc_momentum_score(pct_1d, pct_5d, pct_10d, vol_ratio)
-                
                 ai_score, ai_dec, ai_col, reasons_list = get_ai_analysis(last_c, ma50.iloc[-1], ma200.iloc[-1], rsi.iloc[-1], cur_count, last_zr_l, last_zr_h, event_text, bo_score_add, mom_score, vol_accel_ratio, pct_1d, macro_status, is_forex, is_crypto, last_vwap, rr_ratio, daily_trend, interval)
                 
                 price_disp = format_price(last_c, tk)
@@ -776,7 +754,7 @@ with col_search1:
 
 with col_search2: analyze_btn = st.button("استخراج الفرص 💎", use_container_width=True, type="primary")
 
-macro_status, macro_name, macro_pct, macro_price = get_macro_status(market_choice)
+macro_status, macro_name, macro_pct, macro_price = get_macro_status_v82(market_choice)
 
 if "الفوركس" in market_choice:
     bg_m, txt_m, bord_m, msg_m = "rgba(33, 150, 243, 0.1)", "#00d2ff", "#00d2ff", "سوق العملات لامركزي (درع الماكرو مخصص لمراقبة قوة الدولار فقط 💱)"
@@ -799,9 +777,9 @@ st.markdown(f"""
 st.markdown("</div>", unsafe_allow_html=True)
 
 if analyze_btn or ticker:
-    with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name}) بدقة..."):
+    with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name})..."):
         
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v80(
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v83(
             watchlist_list=selected_watchlist, period=selected_period_scan, interval=selected_interval, lbl=lbl, tf_label=tf_label_name, macro_status=macro_status
         )
         
@@ -923,7 +901,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V80_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V83_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -1053,37 +1031,46 @@ if analyze_btn or ticker:
                 else: 
                     st.markdown(f"<div class='empty-box'>لم يتم رصد أي اختراقات أو كسور في السوق.</div>", unsafe_allow_html=True)
 
-            # 🧩 V80: تفعيل الباك تيست (التاريخ المفصلي للسهم)
+            # ⏳ V83: تفعيل مختبر الباك تيست للتاريخ المفصلي
             with tab_backtest:
                 st.markdown(f"<h3 style='text-align: center; color: #FFD700;'>⏳ السجل التاريخي لـ ({display_name})</h3>", unsafe_allow_html=True)
                 st.markdown("<p style='text-align: center; color: gray;'>يقوم هذا المحرك بفحص آخر 150 شمعة واستخراج الأحداث المفصلية التي مرت على السهم لاختبار قوته التاريخية.</p>", unsafe_allow_html=True)
                 
-                df_bt = df.tail(150).copy()
-                bt_logs = []
-                for i in range(1, len(df_bt)):
-                    prev = df_bt.iloc[i-1]
-                    curr = df_bt.iloc[i]
-                    t_str = df_bt.index[i].strftime('%Y-%m-%d | %H:%M') if selected_interval != '1d' else df_bt.index[i].strftime('%Y-%m-%d')
+                try:
+                    df_bt = df.tail(150).copy()
+                    bt_logs = []
+                    for i in range(1, len(df_bt)):
+                        prev = df_bt.iloc[i-1]
+                        curr = df_bt.iloc[i]
+                        
+                        try: t_str = df_bt.index[i].strftime('%Y-%m-%d | %H:%M') if selected_interval != '1d' else df_bt.index[i].strftime('%Y-%m-%d')
+                        except: t_str = str(df_bt.index[i])[:16]
+                        
+                        if pd.notna(curr.get('ZR_High')) and pd.notna(prev.get('ZR_High')):
+                            if curr['Close'] > curr['ZR_High'] and prev['Close'] <= prev['ZR_High']:
+                                bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🚀 اختراق سقف زيرو 👑"})
+                        
+                        if pd.notna(curr.get('ZR_Low')) and pd.notna(prev.get('ZR_Low')):
+                            if curr['Close'] < curr['ZR_Low'] and prev['Close'] >= prev['ZR_Low']:
+                                bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🩸 كسر قاع زيرو (انهيار) 🕳️"})
+                        
+                        if pd.notna(curr.get('SMA_50')) and pd.notna(prev.get('SMA_50')):
+                            if curr['Close'] > curr['SMA_50'] and prev['Close'] <= prev['SMA_50']:
+                                bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🟢 اختراق متوسط 50"})
+                            elif curr['Close'] < curr['SMA_50'] and prev['Close'] >= prev['SMA_50']:
+                                bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🔴 كسر متوسط 50"})
                     
-                    if pd.notna(curr['ZR_High']) and curr['Close'] > curr['ZR_High'] and prev['Close'] <= prev['ZR_High']:
-                        bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🚀 اختراق سقف زيرو"})
-                    elif pd.notna(curr['ZR_Low']) and curr['Close'] < curr['ZR_Low'] and prev['Close'] >= prev['ZR_Low']:
-                        bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🩸 كسر قاع زيرو (انهيار)"})
-                    
-                    if pd.notna(curr['SMA_50']):
-                        if curr['Close'] > curr['SMA_50'] and prev['Close'] <= prev['SMA_50']:
-                            bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🟢 اختراق متوسط 50 اللحظي"})
-                        elif curr['Close'] < curr['SMA_50'] and prev['Close'] >= prev['SMA_50']:
-                            bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🔴 كسر متوسط 50 اللحظي"})
-                
-                if bt_logs:
-                    df_bt_res = pd.DataFrame(bt_logs).iloc[::-1]
-                    styler_bt = df_bt_res.style.map(safe_color_table, subset=['الحدث التاريخي']) if hasattr(df_bt_res.style, 'map') else df_bt_res.style.applymap(safe_color_table, subset=['الحدث التاريخي'])
-                    st.dataframe(styler_bt, use_container_width=True, height=500)
-                else:
-                    st.info("لم يمر السهم بأي أحداث مفصلية (اختراق/كسر) خلال الـ 150 شمعة الماضية، مساره كان عرضياً أو مستقراً.")
+                    if bt_logs:
+                        df_bt_res = pd.DataFrame(bt_logs).iloc[::-1]
+                        df_bt_res.set_index("التاريخ والوقت", inplace=True)
+                        styler_bt = df_bt_res.style.applymap(safe_color_table, subset=['الحدث التاريخي']) if hasattr(df_bt_res.style, 'applymap') else df_bt_res.style.map(safe_color_table, subset=['الحدث التاريخي'])
+                        st.dataframe(styler_bt, use_container_width=True, height=500)
+                    else:
+                        st.info("لم يمر السهم بأي أحداث مفصلية (اختراق/كسر) خلال الـ 150 شمعة الماضية، مساره كان عرضياً أو مستقراً.")
+                except Exception as e:
+                    st.error(f"⚠️ حدث خطأ في بناء الباك تيست: {str(e)}")
 
-            # 🧩 V80: تفعيل محفظة المراقبة مع قاعدة البيانات
+            # 📂 V83: تفعيل محفظة المراقبة (Watchlist)
             with tab_track:
                 st.markdown("<h3 style='text-align: center; color: #00d2ff;'>📂 محفظة المراقبة (سجل صفقات الـ VIP)</h3>", unsafe_allow_html=True)
                 try:
@@ -1120,7 +1107,6 @@ if analyze_btn or ticker:
                     tv_symbol = ticker
                 
                 tz = "Asia/Riyadh"
-                    
                 tv_interval_tv = "D" if selected_interval == "1d" else selected_interval.replace("m", "")
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","VWAP@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
@@ -1178,38 +1164,69 @@ if analyze_btn or ticker:
                 
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-            # 🧩 V80: إصلاح جدول البيانات واستعادة الكلمات المفقودة ومنع الانهيار
+            # 🛡️📋 V83: بناء الجدول المدرع ضد الأخطاء 
             with tab4:
-                df_display = df.tail(20).copy().iloc[::-1]
+                st.markdown("<h3 style='text-align: center; color: #00d2ff;'>📋 البيانات التاريخية المفصلة</h3>", unsafe_allow_html=True)
+                df_display = df.tail(20).iloc[::-1].copy()
                 
-                try:
-                    if selected_interval == '1d':
-                        formatted_index = [d.strftime('%Y-%m-%d | 00:00') for d in df_display.index]
-                    else:
-                        formatted_index = [d.strftime('%Y-%m-%d | %H:%M') for d in df_display.index]
+                # بناء أعمدة الجدول حبة حبة في قوالب آمنة لضمان عدم الانهيار مهما كان شكل التاريخ
+                time_list = []
+                for d in df_display.index:
+                    try:
+                        if selected_interval == '1d': time_list.append(d.strftime('%Y-%m-%d | 00:00'))
+                        else: time_list.append(d.strftime('%Y-%m-%d | %H:%M'))
+                    except: 
+                        time_list.append(str(d)[:16])
+                
+                table_data = {'الوقت': time_list}
+                
+                def safe_fmt(val, tk):
+                    try: return format_price(val, tk)
+                    except: return "0.00"
                     
-                    df_display.index = formatted_index
-                        
-                    cols_to_show = pd.DataFrame(index=df_display.index)
+                def safe_int(val):
+                    try: return str(int(val)) if pd.notna(val) else "0"
+                    except: return "0"
                     
-                    cols_to_show['الإغلاق'] = df_display['Close'].apply(lambda x: format_price(x, ticker))
-                    cols_to_show['VWAP 🐋'] = df_display['VWAP'].apply(lambda x: format_price(x, ticker))
-                    cols_to_show['الاتجاه'] = df_display['Counter'].apply(lambda x: str(int(x)) if pd.notna(x) and not np.isinf(x) else "0")
-                    cols_to_show['MA 50'] = df_display['SMA_50'].apply(lambda x: format_price(x, ticker))
-                    cols_to_show['MA 200'] = df_display['SMA_200'].apply(lambda x: format_price(x, ticker))
-                    
-                    cols_to_show[col_change_name] = df_display['1d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    cols_to_show[f'تراكمي 3 {lbl}'] = df_display['3d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    cols_to_show[f'تراكمي 5 {lbl}'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    cols_to_show[f'تراكمي 10 {lbl}'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    
-                    if not is_fx_main and not is_crypto_main:
-                        cols_to_show['حجم السيولة'] = df_display['Volume'].apply(lambda x: f"{int(x):,}" if pd.notna(x) and not np.isinf(x) else "0")
+                def safe_cat(val):
+                    try: return format_cat(val, get_cat(val))
+                    except: return ""
 
-                    subset_data = [col_change_name, f'تراكمي 3 {lbl}', f'تراكمي 5 {lbl}', f'تراكمي 10 {lbl}']
+                table_data['الإغلاق'] = [safe_fmt(x, ticker) for x in df_display['Close']]
+                
+                if 'VWAP' in df_display.columns:
+                    table_data['VWAP 🐋'] = [safe_fmt(x, ticker) for x in df_display['VWAP']]
+                else:
+                    table_data['VWAP 🐋'] = [safe_fmt(x, ticker) for x in df_display['Close']]
                     
-                    styler_data = cols_to_show.style.map(safe_color_table, subset=subset_data) if hasattr(cols_to_show.style, 'map') else cols_to_show.style.applymap(safe_color_table, subset=subset_data)
-                    st.dataframe(styler_data, use_container_width=True, height=600)
+                table_data['الاتجاه'] = [safe_int(x) for x in df_display.get('Counter', pd.Series([0]*len(df_display)))]
+                table_data['MA 50'] = [safe_fmt(x, ticker) for x in df_display.get('SMA_50', pd_display['Close'])]
+                table_data['MA 200'] = [safe_fmt(x, ticker) for x in df_display.get('SMA_200', df_display['Close'])]
+                
+                table_data[col_change_name] = [safe_cat(x) for x in df_display.get('1d_%', pd.Series([0]*len(df_display)))]
+                table_data[f'تراكمي 3 {lbl}'] = [safe_cat(x) for x in df_display.get('3d_%', pd.Series([0]*len(df_display)))]
+                table_data[f'تراكمي 5 {lbl}'] = [safe_cat(x) for x in df_display.get('5d_%', pd.Series([0]*len(df_display)))]
+                table_data[f'تراكمي 10 {lbl}'] = [safe_cat(x) for x in df_display.get('10d_%', pd.Series([0]*len(df_display)))]
+                
+                if not is_fx_main and not is_crypto_main:
+                    def safe_vol(val):
+                        try: return f"{int(val):,}" if pd.notna(val) else "0"
+                        except: return "0"
+                    table_data['حجم السيولة'] = [safe_vol(x) for x in df_display.get('Volume', pd.Series([0]*len(df_display)))]
+
+                try:
+                    final_df = pd.DataFrame(table_data)
+                    final_df.set_index('الوقت', inplace=True)
+                    
+                    subset_data = [col_change_name, f'تراكمي 3 {lbl}', f'تراكمي 5 {lbl}', f'تراكمي 10 {lbl}']
+                    existing_cols = [c for c in subset_data if c in final_df.columns]
+                    
+                    if existing_cols:
+                        styler = final_df.style.applymap(safe_color_table, subset=existing_cols) if hasattr(final_df.style, 'applymap') else final_df.style.map(safe_color_table, subset=existing_cols)
+                        st.dataframe(styler, use_container_width=True, height=600)
+                    else:
+                        st.dataframe(final_df.astype(str), use_container_width=True, height=600)
                 except Exception as e:
-                    # جدار الحماية النهائي (حتى في حال الانهيار يعرض البيانات بشكل نظيف)
-                    st.dataframe(df_display.astype(str), use_container_width=True, height=600)
+                    # جدار حماية المستحيل
+                    st.error("حدث خطأ في تنسيق الجدول، يتم عرض البيانات الأساسية.")
+                    st.dataframe(df_display, use_container_width=True, height=600)

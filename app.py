@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V79 Data Identity Fix", layout="wide", page_icon="🧬")
+st.set_page_config(page_title="منصة ماسة 💎 | V79 Titanium Shield", layout="wide", page_icon="🛡️")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V79 (DATA IDENTITY FIX 🧬)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V79 (TITANIUM SHIELD 🛡️)</span>
     </div>
 </div>
 """
@@ -223,10 +223,11 @@ def localize_timezone(df):
                 df.index = df.index.tz_localize('UTC').tz_convert('Asia/Riyadh').tz_localize(None)
             else:
                 df.index = df.index.tz_convert('Asia/Riyadh').tz_localize(None)
-    except Exception as e: pass
+    except Exception: pass
     return df
 
-@st.cache_data(ttl=1800)
+# 🛡️ V79: درع الحماية ضد الانهيارات في جلب بيانات الماكرو
+@st.cache_data(ttl=1800, show_spinner=False)
 def get_macro_status(market_choice):
     if "السعودي" in market_choice: ticker, name = "^TASI.SR", "تاسي (TASI)"
     elif "الأمريكي" in market_choice: ticker, name = "^GSPC", "إس آند بي (S&P 500)"
@@ -234,7 +235,7 @@ def get_macro_status(market_choice):
     else: ticker, name = "BTC-USD", "البيتكوين (BTC)"
     try:
         df = yf.Ticker(ticker).history(period="6mo", interval="1d")
-        if df.empty: return "تذبذب ⛅", name, 0.0, 0.0
+        if df is None or df.empty: return "تذبذب ⛅", name, 0.0, 0.0
         c = df['Close']
         ma50 = c.rolling(50).mean().iloc[-1]
         if pd.isna(ma50): ma50 = c.mean()
@@ -247,7 +248,7 @@ def get_macro_status(market_choice):
             elif last_c < ma50: status = "سلبي ⛈️"
             else: status = "تذبذب ⛅"
         return status, name, pct_change, last_c
-    except: return "تذبذب ⛅", name, 0.0, 0.0
+    except Exception: return "تذبذب ⛅", name, 0.0, 0.0
 
 def save_to_tracker_sql(df_vip, market):
     if df_vip.empty: return False
@@ -461,15 +462,24 @@ def safe_color_table(val):
     except: pass
     return ''
 
-@st.cache_data(ttl=300)
+# 🛡️ V79: دالة السترة الواقية لمنع الشاشة الحمراء تماماً
+@st.cache_data(ttl=300, show_spinner=False)
 def get_stock_data(ticker_symbol, period="2y", interval="1d"): 
-    df = yf.Ticker(ticker_symbol).history(period=period, interval=interval).copy()
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    df = localize_timezone(df)
-    return df
+    try:
+        tk = yf.Ticker(str(ticker_symbol))
+        df = tk.history(period=period, interval=interval)
+        if df is None or df.empty:
+            return pd.DataFrame()
+        df = df.copy()
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        df = localize_timezone(df)
+        return df
+    except Exception as e:
+        return pd.DataFrame() # إرجاع جدول فارغ بصمت بدلاً من تحطيم المنصة
 
-@st.cache_data(ttl=900)
+# 🛡️ V79: وضعية التخفي (Stealth Mode) لتجنب حظر السيرفرات
+@st.cache_data(ttl=900, show_spinner=False)
 def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
@@ -484,7 +494,9 @@ def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", 
     
     def fetch_data(tk):
         try:
-            df = yf.Ticker(tk).history(period=period, interval=interval)
+            t_obj = yf.Ticker(tk)
+            df = t_obj.history(period=period, interval=interval)
+            if df.empty: return tk, None, None
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             df = localize_timezone(df)
@@ -492,17 +504,19 @@ def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", 
             df_1d = None
             if interval != "1d":
                 try:
-                    df_1d_raw = yf.Ticker(tk).history(period="1y", interval="1d")
-                    if isinstance(df_1d_raw.columns, pd.MultiIndex):
-                        df_1d_raw.columns = df_1d_raw.columns.get_level_values(0)
-                    df_1d = localize_timezone(df_1d_raw)
+                    df_1d_raw = t_obj.history(period="1y", interval="1d")
+                    if not df_1d_raw.empty:
+                        if isinstance(df_1d_raw.columns, pd.MultiIndex):
+                            df_1d_raw.columns = df_1d_raw.columns.get_level_values(0)
+                        df_1d = localize_timezone(df_1d_raw)
                 except: pass
                 
             if len(df) > 30: return tk, df, df_1d
-        except: pass
+        except Exception: pass
         return tk, None, None
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    # تخفيض السرعة من 8 إلى 4 لتجنب الحظر الآلي من ياهو (Rate Limit)
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(fetch_data, tk) for tk in watchlist_list]
         for future in as_completed(futures):
             tk, df_s, df_1d = future.result()
@@ -696,7 +710,7 @@ def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", 
         except Exception as e: 
             continue
 
-    # 🔧 تم تصحيح الكارثة: الماسح يرجع الجداول فقط، ولا يرجع أي بيانات تمس الشاشة الرئيسية!
+    # 🧬 V79 Fix: نرجع القوائم فقط للماسح، ولا نرجع بيانات آخر سهم لكي لا يختلط بالشاشة الرئيسية
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
@@ -788,9 +802,9 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
 if analyze_btn or ticker:
-    with st.spinner(f"⚡ جاري مسح السوق... وجلب بيانات ({display_name}) الدقيقة..."):
+    with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name}) بدقة..."):
         
-        # 1. الماسح يعمل في الخلفية بصمت
+        # 1. 🛡️ الماسح يعمل في الخلفية ويخزن قوائمه
         df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v79(
             watchlist_list=selected_watchlist, 
             period=selected_period_scan, 
@@ -800,18 +814,17 @@ if analyze_btn or ticker:
             macro_status=macro_status
         )
         
-        # 2. 🧬 الشاشة الرئيسية تجلب بيانات (السهم المختار فقط) بمعزل عن الماسح
+        # 2. 🧬 الشاشة الرئيسية تجلب بيانات (السهم المختار فقط) بمعزل تام عن الماسح لمنع التداخل
         df = get_stock_data(ticker, selected_period_ui, selected_interval)
 
         if df is None or df.empty: 
-            st.error(f"❌ لا توجد بيانات كافية لـ ({display_name}) في هذا الفاصل الزمني!")
+            st.warning(f"⚠️ جدار الحماية: تعذر جلب بيانات ({display_name}) من المصدر (ياهو فاينانس) بسبب الضغط. يرجى الانتظار بضع ثوانٍ والمحاولة مرة أخرى.")
         else:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
             
             if df_loads.empty: st.cache_data.clear()
 
-            # إعادة حساب المؤشرات للسهم المختار بدقة
             close, high, low = df['Close'], df['High'], df['Low']
             vol = df['Volume'] if 'Volume' in df.columns else pd.Series([0]*len(close), index=close.index)
             
@@ -845,7 +858,6 @@ if analyze_btn or ticker:
             ema_up, ema_down = up.ewm(com=13, adjust=False).mean(), down.ewm(com=13, adjust=False).mean()
             df['RSI'] = 100 - (100 / (1 + (ema_up / ema_down)))
 
-            # حساب قنوات زيرو بدقة للسهم المختار
             if 'ZR_High' not in df.columns:
                 zr_window = 300 if len(close) >= 300 else max(len(close) - 2, 10)
                 df['ZR_High'] = high.rolling(zr_window, min_periods=10).max().shift(1)

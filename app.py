@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V79 Titanium Shield", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="منصة ماسة 💎 | V80 The Perfect Core", layout="wide", page_icon="🧩")
 
 DB_FILE = "masa_database.db"
 
@@ -114,7 +114,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V79 (TITANIUM SHIELD 🛡️)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V80 (THE PERFECT CORE 🧩)</span>
     </div>
 </div>
 """
@@ -226,7 +226,6 @@ def localize_timezone(df):
     except Exception: pass
     return df
 
-# 🛡️ V79: درع الحماية ضد الانهيارات في جلب بيانات الماكرو
 @st.cache_data(ttl=1800, show_spinner=False)
 def get_macro_status(market_choice):
     if "السعودي" in market_choice: ticker, name = "^TASI.SR", "تاسي (TASI)"
@@ -436,13 +435,15 @@ def get_cat(val):
         else: return "MEDIUM"
     except: return ""
 
+# 🧩 V80: إعادة الكلمات المفقودة (MAJOR, HIGH) إلى المخرجات
 def format_cat(val, cat):
     if pd.isna(val) or val == "": return ""
     try:
         f_val = float(val)
-        if f_val > 0: return f"🟢 +{f_val:.2f}%"
-        elif f_val < 0: return f"🔴 {f_val:.2f}%"
-        return f"⚪ 0.00%"
+        cat_str = f" {cat}" if cat else ""
+        if f_val > 0: return f"🟢 +{f_val:.2f}%{cat_str}"
+        elif f_val < 0: return f"🔴 {f_val:.2f}%{cat_str}"
+        return f"⚪ 0.00%{cat_str}"
     except: return str(val)
 
 def safe_color_table(val):
@@ -451,10 +452,11 @@ def safe_color_table(val):
     if "🟢" in val_str or "✅" in val_str or "🚀" in val_str or "💎" in val_str: return 'color: #00E676; font-weight: bold;'
     if "🔴" in val_str or "❌" in val_str or "🩸" in val_str or "⚠️" in val_str: return 'color: #FF5252; font-weight: bold;'
     if "🕳️" in val_str: return 'color: #fff; font-weight: bold; background-color: #f44336; border: 1px solid #f44336;'
-    if "MAJOR" in val_str: return 'font-weight: bold;'
+    if "MAJOR" in val_str: return 'color: #00d2ff; font-weight: bold;' 
+    if "HIGH" in val_str: return 'color: #FFD700; font-weight: bold;' 
     if "⏱️" in val_str: return 'color: #00d2ff; font-weight: bold;'
     try:
-        clean_str = val_str.replace('%', '').replace(',', '').replace('+', '').strip()
+        clean_str = val_str.replace('MAJOR', '').replace('HIGH', '').replace('MEDIUM', '').replace('LOW', '').replace('%', '').replace(',', '').replace('+', '').replace('🟢', '').replace('🔴', '').replace('⚪', '').strip()
         if clean_str.replace('.', '', 1).replace('-', '', 1).isdigit():
             num = float(clean_str)
             if num > 0: return 'color: #00E676; font-weight: bold;'
@@ -462,7 +464,6 @@ def safe_color_table(val):
     except: pass
     return ''
 
-# 🛡️ V79: دالة السترة الواقية لمنع الشاشة الحمراء تماماً
 @st.cache_data(ttl=300, show_spinner=False)
 def get_stock_data(ticker_symbol, period="2y", interval="1d"): 
     try:
@@ -475,12 +476,11 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
             df.columns = df.columns.get_level_values(0)
         df = localize_timezone(df)
         return df
-    except Exception as e:
-        return pd.DataFrame() # إرجاع جدول فارغ بصمت بدلاً من تحطيم المنصة
+    except Exception:
+        return pd.DataFrame() 
 
-# 🛡️ V79: وضعية التخفي (Stealth Mode) لتجنب حظر السيرفرات
 @st.cache_data(ttl=900, show_spinner=False)
-def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v80(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -515,7 +515,6 @@ def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", 
         except Exception: pass
         return tk, None, None
 
-    # تخفيض السرعة من 8 إلى 4 لتجنب الحظر الآلي من ياهو (Rate Limit)
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(fetch_data, tk) for tk in watchlist_list]
         for future in as_completed(futures):
@@ -710,7 +709,6 @@ def scan_market_v79(watchlist_list, period="1y", interval="1d", lbl="أيام", 
         except Exception as e: 
             continue
 
-    # 🧬 V79 Fix: نرجع القوائم فقط للماسح، ولا نرجع بيانات آخر سهم لكي لا يختلط بالشاشة الرئيسية
     return pd.DataFrame(breakouts), pd.DataFrame(breakdowns), pd.DataFrame(recent_up), pd.DataFrame(recent_down), pd.DataFrame(loads_list), pd.DataFrame(alerts_list), pd.DataFrame(ai_picks)
 
 # ==========================================
@@ -800,25 +798,17 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-
 if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name}) بدقة..."):
         
-        # 1. 🛡️ الماسح يعمل في الخلفية ويخزن قوائمه
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v79(
-            watchlist_list=selected_watchlist, 
-            period=selected_period_scan, 
-            interval=selected_interval, 
-            lbl=lbl, 
-            tf_label=tf_label_name,
-            macro_status=macro_status
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v80(
+            watchlist_list=selected_watchlist, period=selected_period_scan, interval=selected_interval, lbl=lbl, tf_label=tf_label_name, macro_status=macro_status
         )
         
-        # 2. 🧬 الشاشة الرئيسية تجلب بيانات (السهم المختار فقط) بمعزل تام عن الماسح لمنع التداخل
         df = get_stock_data(ticker, selected_period_ui, selected_interval)
 
         if df is None or df.empty: 
-            st.warning(f"⚠️ جدار الحماية: تعذر جلب بيانات ({display_name}) من المصدر (ياهو فاينانس) بسبب الضغط. يرجى الانتظار بضع ثوانٍ والمحاولة مرة أخرى.")
+            st.warning(f"⚠️ جدار الحماية: تعذر جلب بيانات ({display_name}) من المصدر. يرجى الانتظار بضع ثوانٍ والمحاولة مرة أخرى.")
         else:
             is_fx_main = "=X" in ticker
             is_crypto_main = "-USD" in ticker
@@ -841,8 +831,10 @@ if analyze_btn or ticker:
             df['High_10D'], df['Low_10D'] = high.rolling(10).max().shift(1), low.rolling(10).min().shift(1)
             df['High_15D'], df['Low_15D'] = high.rolling(15).max().shift(1), low.rolling(15).min().shift(1)
 
-            df['1d_%'], df['3d_%'] = close.pct_change(1) * 100, close.pct_change(3) * 100 
-            df['5d_%'], df['10d_%'] = close.pct_change(5) * 100, close.pct_change(10) * 100
+            df['1d_%'] = close.pct_change(1) * 100
+            df['3d_%'] = close.pct_change(3) * 100 
+            df['5d_%'] = close.pct_change(5) * 100
+            df['10d_%'] = close.pct_change(10) * 100
             
             diff = close.diff()
             direction = np.where(diff > 0, 1, np.where(diff < 0, -1, 0))
@@ -905,9 +897,9 @@ if analyze_btn or ticker:
                         st.markdown("<h3 style='text-align: center; color: #ffd700; font-weight: 900; margin-bottom: 5px;'>👑 الصندوق الأسود: أقوى الفرص الاستثمارية الآن</h3>", unsafe_allow_html=True)
                         col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
                         with col_btn2:
-                            if st.button("💾 حفظ هذه الفرص في محفظة المراقبة (SQLite)", use_container_width=True):
+                            if st.button("💾 حفظ هذه الفرص في محفظة المراقبة", use_container_width=True):
                                 save_to_tracker_sql(df_vip, market_choice)
-                                st.success("✅ تم الحفظ بنجاح في قاعدة البيانات!")
+                                st.success("✅ تم الحفظ بنجاح! راجع تبويب (المراقبة 📂)")
                         cards_html = "<div class='vip-container'>"
                         for _, row in df_vip.iterrows():
                             risk_amount = capital * (risk_pct / 100)
@@ -931,7 +923,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V79_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V80_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -945,7 +937,6 @@ if analyze_btn or ticker:
 
             with tab_whales:
                 st.markdown("<h3 style='text-align: center; color: #00d2ff; font-weight: bold;'>🧲 رادار تدفق السيولة (أثر الحيتان)</h3>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center; color: gray;'>يصطاد هذا الرادار الأصول التي تتعرض لعمليات <b>(تجميع صامت)</b> أو <b>(تصريف خفي)</b> على مدار 3، 5، و 10 {lbl} متتالية.</p>", unsafe_allow_html=True)
                 
                 if not df_loads.empty:
                     df_w = pd.DataFrame(df_loads).copy()
@@ -1038,7 +1029,7 @@ if analyze_btn or ticker:
                         subset_cols = [c for c in [col_change_name, f'حالة 3 {lbl}', f'تراكمي 3 {lbl}', f'حالة 5 {lbl}', f'تراكمي 5 {lbl}', f'حالة 10 {lbl}', f'تراكمي 10 {lbl}'] if c in df_loads_styled.columns]
                         
                         if subset_cols:
-                            styler_loads = df_loads_styled.style.map(safe_color_table, subset=subset_cols) if hasattr(df_loads_styled.style, 'map') else df_loads_styled.style.applymap(safe_color_table, subset=subset_cols)
+                            styler_loads = df_loads_styled.style.applymap(safe_color_table, subset=subset_cols) if hasattr(df_loads_styled.style, 'applymap') else df_loads_styled.style.map(safe_color_table, subset=subset_cols)
                             st.dataframe(styler_loads, use_container_width=True, height=550)
                         else: 
                             st.dataframe(df_loads_styled.astype(str), use_container_width=True, height=550)
@@ -1053,7 +1044,7 @@ if analyze_btn or ticker:
                     df_alerts_disp = pd.DataFrame(df_alerts).fillna('')
                     try:
                         if 'التنبيه' in df_alerts_disp.columns:
-                            styler_alerts = df_alerts_disp.style.map(safe_color_table, subset=['التنبيه']) if hasattr(df_alerts_disp.style, 'map') else df_alerts_disp.style.applymap(safe_color_table, subset=['التنبيه'])
+                            styler_alerts = df_alerts_disp.style.applymap(safe_color_table, subset=['التنبيه']) if hasattr(df_alerts_disp.style, 'applymap') else df_alerts_disp.style.map(safe_color_table, subset=['التنبيه'])
                             st.dataframe(styler_alerts, use_container_width=True, height=550)
                         else: 
                             st.dataframe(df_alerts_disp.astype(str), use_container_width=True, height=550)
@@ -1061,6 +1052,58 @@ if analyze_btn or ticker:
                         st.dataframe(df_alerts_disp.astype(str), use_container_width=True, height=550)
                 else: 
                     st.markdown(f"<div class='empty-box'>لم يتم رصد أي اختراقات أو كسور في السوق.</div>", unsafe_allow_html=True)
+
+            # 🧩 V80: تفعيل الباك تيست (التاريخ المفصلي للسهم)
+            with tab_backtest:
+                st.markdown(f"<h3 style='text-align: center; color: #FFD700;'>⏳ السجل التاريخي لـ ({display_name})</h3>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: gray;'>يقوم هذا المحرك بفحص آخر 150 شمعة واستخراج الأحداث المفصلية التي مرت على السهم لاختبار قوته التاريخية.</p>", unsafe_allow_html=True)
+                
+                df_bt = df.tail(150).copy()
+                bt_logs = []
+                for i in range(1, len(df_bt)):
+                    prev = df_bt.iloc[i-1]
+                    curr = df_bt.iloc[i]
+                    t_str = df_bt.index[i].strftime('%Y-%m-%d | %H:%M') if selected_interval != '1d' else df_bt.index[i].strftime('%Y-%m-%d')
+                    
+                    if pd.notna(curr['ZR_High']) and curr['Close'] > curr['ZR_High'] and prev['Close'] <= prev['ZR_High']:
+                        bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🚀 اختراق سقف زيرو"})
+                    elif pd.notna(curr['ZR_Low']) and curr['Close'] < curr['ZR_Low'] and prev['Close'] >= prev['ZR_Low']:
+                        bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🩸 كسر قاع زيرو (انهيار)"})
+                    
+                    if pd.notna(curr['SMA_50']):
+                        if curr['Close'] > curr['SMA_50'] and prev['Close'] <= prev['SMA_50']:
+                            bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🟢 اختراق متوسط 50 اللحظي"})
+                        elif curr['Close'] < curr['SMA_50'] and prev['Close'] >= prev['SMA_50']:
+                            bt_logs.append({"التاريخ والوقت": t_str, "السعر": format_price(curr['Close'], ticker), "الحدث التاريخي": "🔴 كسر متوسط 50 اللحظي"})
+                
+                if bt_logs:
+                    df_bt_res = pd.DataFrame(bt_logs).iloc[::-1]
+                    styler_bt = df_bt_res.style.map(safe_color_table, subset=['الحدث التاريخي']) if hasattr(df_bt_res.style, 'map') else df_bt_res.style.applymap(safe_color_table, subset=['الحدث التاريخي'])
+                    st.dataframe(styler_bt, use_container_width=True, height=500)
+                else:
+                    st.info("لم يمر السهم بأي أحداث مفصلية (اختراق/كسر) خلال الـ 150 شمعة الماضية، مساره كان عرضياً أو مستقراً.")
+
+            # 🧩 V80: تفعيل محفظة المراقبة مع قاعدة البيانات
+            with tab_track:
+                st.markdown("<h3 style='text-align: center; color: #00d2ff;'>📂 محفظة المراقبة (سجل صفقات الـ VIP)</h3>", unsafe_allow_html=True)
+                try:
+                    conn = sqlite3.connect(DB_FILE)
+                    df_saved = pd.read_sql_query("SELECT date_time AS 'وقت الرصد', market AS 'السوق', ticker AS 'الرمز', company AS 'الشركة', entry AS 'سعر الدخول', target AS 'الهدف', stop_loss AS 'الوقف', score AS 'التقييم', mom AS 'الزخم' FROM tracker ORDER BY date_time DESC", conn)
+                    if not df_saved.empty:
+                        st.dataframe(df_saved, use_container_width=True)
+                        col_del1, col_del2, col_del3 = st.columns([1,1,1])
+                        with col_del2:
+                            if st.button("🗑️ مسح السجل بالكامل", type="secondary", use_container_width=True):
+                                cur = conn.cursor()
+                                cur.execute("DELETE FROM tracker")
+                                conn.commit()
+                                st.rerun() if hasattr(st, 'rerun') else st.experimental_rerun()
+                    else:
+                        st.info("📂 المحفظة فارغة حالياً. اذهب إلى (👑 VIP ماسة) واضغط على زر [حفظ هذه الفرص] لإضافتها هنا.")
+                except Exception as e:
+                    st.error("حدث خطأ في قراءة قاعدة البيانات.")
+                finally:
+                    if 'conn' in locals(): conn.close()
 
             with tab2:
                 if is_fx_main:
@@ -1135,46 +1178,38 @@ if analyze_btn or ticker:
                 
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
+            # 🧩 V80: إصلاح جدول البيانات واستعادة الكلمات المفقودة ومنع الانهيار
             with tab4:
-                df_display = df.copy()
+                df_display = df.tail(20).copy().iloc[::-1]
+                
                 try:
-                    df_display['Load_Diff_1D'] = df_display['1d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    df_display['Load_Diff_3D'] = df_display['3d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    df_display['Load_Diff_5D'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    df_display['Load_Diff_10D'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
-                    
                     if selected_interval == '1d':
-                        time_list = [f"{d.strftime('%Y-%m-%d')} | 00:00" for d in df_display.index]
-                        if len(time_list) > 0:
-                            time_list[-1] = f"{df_display.index[-1].strftime('%Y-%m-%d')} | {now_internal.strftime('%H:%M')}"
+                        formatted_index = [d.strftime('%Y-%m-%d | 00:00') for d in df_display.index]
                     else:
-                        time_list = [f"{d.strftime('%Y-%m-%d')} | {d.strftime('%H:%M')}" for d in df_display.index]
+                        formatted_index = [d.strftime('%Y-%m-%d | %H:%M') for d in df_display.index]
                     
-                    table_data = {
-                        'الوقت': time_list,
-                        'الإغلاق': df_display['Close'].apply(lambda x: format_price(x, ticker)),
-                        'VWAP 🐋': df_display['VWAP'].apply(lambda x: format_price(x, ticker)),
-                        'الاتجاه': df_display['Counter'].astype(int),
-                        'MA 50': df_display['SMA_50'].apply(lambda x: format_price(x, ticker)),
-                        'MA 200': df_display['SMA_200'].apply(lambda x: format_price(x, ticker)),
-                        col_change_name: df_display['Load_Diff_1D'],
-                        f'تراكمي 3 {lbl}': df_display['Load_Diff_3D'],
-                        f'تراكمي 5 {lbl}': df_display['Load_Diff_5D'],
-                        f'تراكمي 10 {lbl}': df_display['Load_Diff_10D'],
-                    }
+                    df_display.index = formatted_index
+                        
+                    cols_to_show = pd.DataFrame(index=df_display.index)
+                    
+                    cols_to_show['الإغلاق'] = df_display['Close'].apply(lambda x: format_price(x, ticker))
+                    cols_to_show['VWAP 🐋'] = df_display['VWAP'].apply(lambda x: format_price(x, ticker))
+                    cols_to_show['الاتجاه'] = df_display['Counter'].apply(lambda x: str(int(x)) if pd.notna(x) and not np.isinf(x) else "0")
+                    cols_to_show['MA 50'] = df_display['SMA_50'].apply(lambda x: format_price(x, ticker))
+                    cols_to_show['MA 200'] = df_display['SMA_200'].apply(lambda x: format_price(x, ticker))
+                    
+                    cols_to_show[col_change_name] = df_display['1d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    cols_to_show[f'تراكمي 3 {lbl}'] = df_display['3d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    cols_to_show[f'تراكمي 5 {lbl}'] = df_display['5d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    cols_to_show[f'تراكمي 10 {lbl}'] = df_display['10d_%'].apply(lambda x: format_cat(x, get_cat(x)))
+                    
                     if not is_fx_main and not is_crypto_main:
-                        table_data['حجم السيولة'] = df_display['Volume'].apply(lambda x: f"{int(x):,}" if pd.notna(x) else "0")
+                        cols_to_show['حجم السيولة'] = df_display['Volume'].apply(lambda x: f"{int(x):,}" if pd.notna(x) and not np.isinf(x) else "0")
 
-                    table = pd.DataFrame(table_data).fillna('')
-                    display_table = table.tail(15).iloc[::-1].copy()
-                    display_table.set_index('الوقت', inplace=True)
                     subset_data = [col_change_name, f'تراكمي 3 {lbl}', f'تراكمي 5 {lbl}', f'تراكمي 10 {lbl}']
-                    existing_data_cols = [c for c in subset_data if c in display_table.columns]
                     
-                    if existing_data_cols:
-                        styler_data = display_table.style.map(safe_color_table, subset=existing_data_cols) if hasattr(display_table.style, 'map') else display_table.style.applymap(safe_color_table, subset=existing_data_cols)
-                        st.dataframe(styler_data, use_container_width=True, height=550)
-                    else: 
-                        st.dataframe(display_table.astype(str), use_container_width=True, height=550)
-                except Exception as e: 
-                    st.dataframe(df_display.tail(15).iloc[::-1].astype(str), use_container_width=True, height=550)
+                    styler_data = cols_to_show.style.map(safe_color_table, subset=subset_data) if hasattr(cols_to_show.style, 'map') else cols_to_show.style.applymap(safe_color_table, subset=subset_data)
+                    st.dataframe(styler_data, use_container_width=True, height=600)
+                except Exception as e:
+                    # جدار الحماية النهائي (حتى في حال الانهيار يعرض البيانات بشكل نظيف)
+                    st.dataframe(df_display.astype(str), use_container_width=True, height=600)

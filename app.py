@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V91 AI Cards UI", layout="wide", page_icon="🃏")
+st.set_page_config(page_title="منصة ماسة 💎 | V92 UI Format Fix", layout="wide", page_icon="🃏")
 
 DB_FILE = "masa_database.db"
 
@@ -36,7 +36,7 @@ def init_db():
 
 init_db()
 
-# 🧽 V91: دالة التعقيم الجراحية لمنع انهيار الواجهة بسبب الحروف المخفية أو الرموز
+# 🧽 تعقيم ذكي: يزيل الحروف المخفية المعطوبة فقط، ويسمح لأكواد HTML بالعمل
 def sanitize_text(text):
     if not isinstance(text, str):
         return str(text)
@@ -63,7 +63,7 @@ div[data-testid="metric-container"]:hover { transform: translateY(-5px); border-
 .search-container { background: linear-gradient(145deg, #1e2129, #15171e); padding: 20px; border-radius: 15px; border: 1px solid #2d303e; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); text-align: center;}
 .empty-box { text-align:center; padding:15px; background-color:#1e2129; border-radius:8px; color:#888; margin-bottom:15px; font-size:15px; border: 1px dashed #2d303e;}
 
-/* 🧠 تصميم البطاقات الذكية للتوصيات V91 */
+/* 🧠 تصميم البطاقات الذكية للتوصيات */
 .ai-card { background: linear-gradient(145deg, #12141a, #1a1c24); border: 1px solid #2d303e; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.3); transition: transform 0.2s;}
 .ai-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.5);}
 .bo-badge { font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 12px; display: inline-block; white-space: nowrap; margin: 2px;}
@@ -119,7 +119,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V91 (AI CARDS UI 🃏)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V92 (UI FORMAT FIX 🃏)</span>
     </div>
 </div>
 """
@@ -460,7 +460,7 @@ def safe_color_table(val):
     if "👑" in val_str or "🌌" in val_str or "🚀" in val_str: return 'color: #ffd700; font-weight: bold; background-color: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700;'
     if "🟢" in val_str or "✅" in val_str or "💎" in val_str: return 'color: #00E676; font-weight: bold;'
     if "🔴" in val_str or "❌" in val_str or "🩸" in val_str or "⚠️" in val_str: return 'color: #FF5252; font-weight: bold;'
-    if "🔻" in val_str: return 'color: #fff; font-weight: bold; background-color: #f44336; border: 1px solid #f44336;'
+    if "🕳️" in val_str or "🔻" in val_str: return 'color: #fff; font-weight: bold; background-color: #f44336; border: 1px solid #f44336;'
     if "MAJOR" in val_str: return 'color: #00d2ff; font-weight: bold;' 
     if "HIGH" in val_str: return 'color: #FFD700; font-weight: bold;' 
     if "⏱️" in val_str: return 'color: #00d2ff; font-weight: bold;'
@@ -486,7 +486,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     except Exception: return pd.DataFrame() 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def scan_market_v91(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v92(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -789,7 +789,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name})..."):
         
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v91(
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v92(
             watchlist_list=selected_watchlist, period=selected_period_scan, interval=selected_interval, lbl=lbl, tf_label=tf_label_name, macro_status=macro_status
         )
         
@@ -912,7 +912,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V91_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V92_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -960,13 +960,15 @@ if analyze_btn or ticker:
                         else: st.markdown("<div class='empty-box' style='border-color:#FF5252;'>لا توجد عمليات تصريف واضحة حالياً.</div>", unsafe_allow_html=True)
                 else: st.info("لا توجد بيانات كافية.")
 
-            # 🃏 V91: تبويب التوصيات الجديد (البطاقات الذكية لتجنب انهيار المتصفح)
+            # 🃏 V92: التنسيق الذكي لبطاقات أشعة إكس (السماح بأكواد التغميق وترتيب النقاط من اليمين)
             with tab_ai:
                 st.markdown("<h3 style='text-align: center; color: #00d2ff; margin-bottom: 20px;'>🧠 تقرير أشعة إكس (تحليل الخوارزمية المفصل)</h3>", unsafe_allow_html=True)
                 if not df_ai_picks.empty:
                     df_ai_disp = pd.DataFrame(df_ai_picks).sort_values(by="Score 💯", ascending=False)
                     for _, row in df_ai_disp.iterrows():
-                        safe_reasons = [str(r).replace('&', 'and').replace('<', '&lt;').replace('>', '&gt;') for r in row['raw_reasons']]
+                        # تمرير التعقيم الذكي بدلاً من الفلتر الغبي
+                        safe_reasons = [sanitize_text(str(r)) for r in row['raw_reasons']]
+                        
                         reasons_html = "".join([f"<li style='font-size:14px; color:#ddd; margin-bottom:8px; line-height:1.6;'>{r}</li>" for r in safe_reasons])
                         
                         c_name = sanitize_text(str(row['الشركة']))
@@ -977,7 +979,7 @@ if analyze_btn or ticker:
                         c_col = str(row['اللون'])
 
                         card_html = f"""
-                        <div style='background: linear-gradient(145deg, #1a1c24, #12141a); border: 1px solid {c_col}50; border-right: 6px solid {c_col}; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);'>
+                        <div style='background: linear-gradient(145deg, #1a1c24, #12141a); border: 1px solid {c_col}50; border-right: 6px solid {c_col}; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);' dir='rtl'>
                             <div style='display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #2d303e; padding-bottom: 15px; margin-bottom: 15px;'>
                                 <div style='font-size: 24px; font-weight: 900; color: #ffffff;'>{c_name} <span style='font-size: 16px; color: #888;'>({row['الرمز']})</span></div>
                                 <div style='font-size: 28px; font-weight: bold; color: {c_col}; text-shadow: 0 0 15px {c_col}40;'>{c_score}/100</div>
@@ -990,7 +992,7 @@ if analyze_btn or ticker:
                                 </div>
                                 <div style='flex: 2; min-width: 300px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; border: 1px solid #2d303e;'>
                                     <b style='color:#00d2ff; font-size: 16px;'>🔬 تقرير الذكاء الاصطناعي:</b>
-                                    <ul style='margin-top: 12px; padding-right: 25px;'>
+                                    <ul style='margin-top: 12px; padding-right: 25px; list-style-type: disc;'>
                                         {reasons_html}
                                     </ul>
                                 </div>
@@ -1000,7 +1002,7 @@ if analyze_btn or ticker:
                         try:
                             st.markdown(card_html, unsafe_allow_html=True)
                         except Exception:
-                            st.error(f"⚠️ تعذر عرض بطاقة السهم {row['الرمز']} بسبب أحرف غير مدعومة.")
+                            st.error(f"⚠️ تعذر عرض بطاقة السهم {row['الرمز']}.")
                 else: 
                     st.markdown("<div class='empty-box'>📉 لا توجد أصول مطابقة للمعايير حالياً.</div>", unsafe_allow_html=True)
 
@@ -1231,7 +1233,7 @@ if analyze_btn or ticker:
                                 st.rerun() if hasattr(st, 'rerun') else st.experimental_rerun()
                                 
                     else:
-                        st.info("📂 المحفظة فارغة و(نظيفة من الأسهم القديمة). اذهب إلى (👑 VIP ماسة) واضغط على زر [حفظ هذه الفرص] لإضافتها هنا ومتابعتها لحظياً.")
+                        st.info("📂 المحفظة فارغة. اذهب إلى (👑 VIP ماسة) واضغط على زر [حفظ هذه الفرص] لإضافتها هنا ومتابعتها لحظياً.")
                 except Exception as e:
                     st.error(f"حدث خطأ في قراءة قاعدة البيانات: {e}")
                 finally:

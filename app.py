@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 💎 1. إعدادات الهوية وقاعدة البيانات
 # ==========================================
-st.set_page_config(page_title="منصة ماسة 💎 | V92 UI Format Fix", layout="wide", page_icon="🃏")
+st.set_page_config(page_title="منصة ماسة 💎 | V94 Final Puzzle", layout="wide", page_icon="🧩")
 
 DB_FILE = "masa_database.db"
 
@@ -36,7 +36,6 @@ def init_db():
 
 init_db()
 
-# 🧽 تعقيم ذكي: يزيل الحروف المخفية المعطوبة فقط، ويسمح لأكواد HTML بالعمل
 def sanitize_text(text):
     if not isinstance(text, str):
         return str(text)
@@ -119,7 +118,7 @@ masa_logo_html = """
         <span style="font-size: 42px; font-weight: 300; letter-spacing: 5px; color: #00d2ff; text-shadow: 0 0 15px rgba(0,210,255,0.4);"> QUANT</span>
     </div>
     <div style="color: #888; font-size: 13px; letter-spacing: 3px; font-weight: bold; margin-top: 8px;">
-        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V92 (UI FORMAT FIX 🃏)</span>
+        INSTITUTIONAL ALGORITHMIC TRADING <span style="color:#ffd700">V94 (FINAL PUZZLE 🧩)</span>
     </div>
 </div>
 """
@@ -170,6 +169,48 @@ with st.expander("⚙️ لوحة التحكم والإعدادات (المحف�
         st.markdown("<h4 style='color:#00E676; text-align:right;'>🤖 إشعارات التليجرام</h4>", unsafe_allow_html=True)
         tg_token = st.text_input("Bot Token (الصق توكن الروبوت هنا)", type="password")
         tg_chat = st.text_input("Chat ID (الصق رقم غرفتك هنا)")
+
+# ==========================================
+# 🧩 خوارزمية التجميد الهيكلي (Structural Freezing) - مطابقة لـ Pine Script
+# ==========================================
+def calculate_zero_reflection(high_col, low_col, bars, confirm_len):
+    try:
+        ph_val = np.zeros(len(high_col))
+        pl_val = np.full(len(low_col), 10e10)
+        
+        if len(high_col) > 2 * confirm_len:
+            window_size = int(2 * confirm_len + 1)
+            
+            roll_max = high_col.rolling(window=window_size, min_periods=1).max().values
+            roll_min = low_col.rolling(window=window_size, min_periods=1).min().values
+            
+            shifted_high = high_col.shift(int(confirm_len)).values
+            shifted_low = low_col.shift(int(confirm_len)).values
+            
+            with np.errstate(invalid='ignore'):
+                is_ph = (shifted_high == roll_max) & ~np.isnan(shifted_high)
+                is_pl = (shifted_low == roll_min) & ~np.isnan(shifted_low)
+            
+            ph_val[is_ph] = shifted_high[is_ph]
+            pl_val[is_pl] = shifted_low[is_pl]
+            
+        ph_series = pd.Series(ph_val, index=high_col.index)
+        pl_series = pd.Series(pl_val, index=low_col.index)
+        
+        ceiling = ph_series.rolling(window=int(bars), min_periods=1).max()
+        floor = pl_series.rolling(window=int(bars), min_periods=1).min()
+        
+        fallback_ceiling = high_col.rolling(window=int(bars), min_periods=1).max()
+        fallback_floor = low_col.rolling(window=int(bars), min_periods=1).min()
+        
+        ceiling = np.where((ceiling == 0.0) | ceiling.isna(), fallback_ceiling, ceiling)
+        floor = np.where((floor == 10e10) | floor.isna(), fallback_floor, floor)
+        
+        return pd.Series(ceiling, index=high_col.index), pd.Series(floor, index=low_col.index)
+    except Exception as e:
+        fallback_ceiling = high_col.rolling(window=int(bars), min_periods=1).max()
+        fallback_floor = low_col.rolling(window=int(bars), min_periods=1).min()
+        return fallback_ceiling, fallback_floor
 
 # ==========================================
 # 🌍 2. قوائم الأسواق الشاملة
@@ -486,7 +527,7 @@ def get_stock_data(ticker_symbol, period="2y", interval="1d"):
     except Exception: return pd.DataFrame() 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def scan_market_v92(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
+def scan_market_v94(watchlist_list, period="1y", interval="1d", lbl="أيام", tf_label="يومي", macro_status="تذبذب ⛅"):
     breakouts, breakdowns, recent_up, recent_down = [], [], [], []
     loads_list, alerts_list, ai_picks = [], [], []
     
@@ -557,9 +598,10 @@ def scan_market_v92(watchlist_list, period="1y", interval="1d", lbl="أيام", 
                 h4, l4 = h.rolling(4).max().shift(1), l.rolling(4).min().shift(1)
                 h10, l10 = h.rolling(10).max().shift(1), l.rolling(10).min().shift(1)
                 
-                zr_window = 300 if len(c) >= 300 else max(len(c) - 2, 10)
-                df_s['ZR_High'] = h.rolling(zr_window, min_periods=10).max().shift(1)
-                df_s['ZR_Low'] = l.rolling(zr_window, min_periods=10).min().shift(1)
+                # 🧩 تطبيق التجميد الهيكلي للماسح
+                zr1_h, zr1_l = calculate_zero_reflection(h, l, 400, 25)
+                df_s['ZR_High'] = zr1_h
+                df_s['ZR_Low'] = zr1_l
                 
                 last_zr_h = df_s['ZR_High'].iloc[-1] if not df_s['ZR_High'].empty else np.nan
                 prev_zr_h = df_s['ZR_High'].iloc[-2] if len(df_s) > 1 else last_zr_h
@@ -789,7 +831,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 if analyze_btn or ticker:
     with st.spinner(f"⚡ جاري مسح السوق بهدوء... وجلب بيانات ({display_name})..."):
         
-        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v92(
+        df_bup, df_bdn, df_recent_up, df_recent_down, df_loads, df_alerts, df_ai_picks = scan_market_v94(
             watchlist_list=selected_watchlist, period=selected_period_scan, interval=selected_interval, lbl=lbl, tf_label=tf_label_name, macro_status=macro_status
         )
         
@@ -838,10 +880,14 @@ if analyze_btn or ticker:
             ema_up, ema_down = up.ewm(com=13, adjust=False).mean(), down.ewm(com=13, adjust=False).mean()
             df['RSI'] = 100 - (100 / (1 + (ema_up / ema_down)))
 
-            if 'ZR_High' not in df.columns:
-                zr_window = 300 if len(close) >= 300 else max(len(close) - 2, 10)
-                df['ZR_High'] = high.rolling(zr_window, min_periods=10).max().shift(1)
-                df['ZR_Low'] = low.rolling(zr_window, min_periods=10).min().shift(1)
+            # 🧩 تطبيق خوارزمية التجميد الهيكلي للشارت
+            if 'ZR_High' not in df.columns or True:
+                zr1_h, zr1_l = calculate_zero_reflection(high, low, 400, 25)
+                zr2_h, zr2_l = calculate_zero_reflection(high, low, 300, 30)
+                df['ZR_High'] = zr1_h
+                df['ZR_Low'] = zr1_l
+                df['ZR2_High'] = zr2_h
+                df['ZR2_Low'] = zr2_l
 
             last_close, prev_close = close.iloc[-1], close.iloc[-2]
             pct_change = ((last_close - prev_close) / prev_close) * 100 if prev_close != 0 else 0
@@ -912,7 +958,7 @@ if analyze_btn or ticker:
                             
                             alert_id = f"{today_str}_{row['الرمز']}_{selected_interval}"
                             if tg_token and tg_chat and alert_id not in st.session_state.tg_sent:
-                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V92_"
+                                msg = f"🚨 *Masa VIP Alert!* 💎\n\n📌 *Asset:* {row['الشركة']} ({row['الرمز']})\n⏱️ *Timeframe:* {tf_choice}\n💰 *Price:* {row['السعر']}\n🎯 *Target:* {row['الهدف 🎯']}\n🛡️ *SL (ATR):* {row['الوقف 🛡️']}\n⚖️ *R:R:* 1:{row['raw_rr']:.1f}\n\n🤖 _Masa Quant System V94_"
                                 try: requests.post(f"https://api.telegram.org/bot{tg_token}/sendMessage", data={"chat_id": tg_chat, "text": msg, "parse_mode": "Markdown"}); st.session_state.tg_sent.add(alert_id)
                                 except: pass
 
@@ -960,15 +1006,12 @@ if analyze_btn or ticker:
                         else: st.markdown("<div class='empty-box' style='border-color:#FF5252;'>لا توجد عمليات تصريف واضحة حالياً.</div>", unsafe_allow_html=True)
                 else: st.info("لا توجد بيانات كافية.")
 
-            # 🃏 V92: التنسيق الذكي لبطاقات أشعة إكس (السماح بأكواد التغميق وترتيب النقاط من اليمين)
             with tab_ai:
                 st.markdown("<h3 style='text-align: center; color: #00d2ff; margin-bottom: 20px;'>🧠 تقرير أشعة إكس (تحليل الخوارزمية المفصل)</h3>", unsafe_allow_html=True)
                 if not df_ai_picks.empty:
                     df_ai_disp = pd.DataFrame(df_ai_picks).sort_values(by="Score 💯", ascending=False)
                     for _, row in df_ai_disp.iterrows():
-                        # تمرير التعقيم الذكي بدلاً من الفلتر الغبي
                         safe_reasons = [sanitize_text(str(r)) for r in row['raw_reasons']]
-                        
                         reasons_html = "".join([f"<li style='font-size:14px; color:#ddd; margin-bottom:8px; line-height:1.6;'>{r}</li>" for r in safe_reasons])
                         
                         c_name = sanitize_text(str(row['الشركة']))
@@ -1258,6 +1301,7 @@ if analyze_btn or ticker:
                 tradingview_html = f"""<div class="tradingview-widget-container" style="height:700px;width:100%"><div id="tradingview_masa" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script><script type="text/javascript">new TradingView.widget({{"autosize": true,"symbol": "{tv_symbol}","interval": "{tv_interval_tv}","timezone": "{tz}","theme": "dark","style": "1","locale": "ar_AE","enable_publishing": false,"backgroundColor": "#1a1c24","gridColor": "#2d303e","hide_top_toolbar": false,"hide_legend": false,"save_image": false,"container_id": "tradingview_masa","toolbar_bg": "#1e2129","studies": ["Volume@tv-basicstudies","RSI@tv-basicstudies","MASimple@tv-basicstudies","VWAP@tv-basicstudies"]}});</script></div>"""
                 components.html(tradingview_html, height=700)
 
+            # 🧩 V94: إضافة الأساسي والمطور إلى شارت المنصة بناءً على طلبك
             with tab3:
                 df_plot = df.tail(150) if selected_interval != '1d' else df.tail(300)
                 fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.6, 0.2, 0.2])
@@ -1270,26 +1314,42 @@ if analyze_btn or ticker:
                 
                 current_zr_high = df['ZR_High'].iloc[-1] if pd.notna(df['ZR_High'].iloc[-1]) else df_plot['High'].max()
                 current_zr_low = df['ZR_Low'].iloc[-1] if pd.notna(df['ZR_Low'].iloc[-1]) else df_plot['Low'].min()
-                
+                current_zr2_high = df['ZR2_High'].iloc[-1] if pd.notna(df['ZR2_High'].iloc[-1]) else df_plot['High'].max()
+                current_zr2_low = df['ZR2_Low'].iloc[-1] if pd.notna(df['ZR2_Low'].iloc[-1]) else df_plot['Low'].min()
+
                 fig.add_trace(go.Scatter(
                     x=df_plot.index, 
-                    y=[current_zr_high] * len(df_plot), 
-                    mode='lines', line=dict(color='white', width=4, dash='30px,15px'), 
-                    name=f'سقف زيرو', hoverinfo='skip'
+                    y=df_plot['ZR_High'], 
+                    mode='lines', line=dict(color='white', width=3, dash='25px,15px'), 
+                    name=f'سقف زيرو (الأساسي)', hoverinfo='skip'
                 ), row=1, col=1)
 
                 fig.add_trace(go.Scatter(
                     x=df_plot.index, 
-                    y=[current_zr_low] * len(df_plot), 
+                    y=df_plot['ZR_Low'], 
+                    mode='lines', line=dict(color='rgb(251, 140, 0)', width=3, dash='25px,15px'), 
+                    name=f'قاع زيرو (الأساسي)', hoverinfo='skip'
+                ), row=1, col=1)
+
+                fig.add_trace(go.Scatter(
+                    x=df_plot.index, 
+                    y=df_plot['ZR2_High'], 
+                    mode='lines', line=dict(color='white', width=4, dash='30px,15px'), 
+                    name=f'سقف زيرو (المطور)', hoverinfo='skip'
+                ), row=1, col=1)
+
+                fig.add_trace(go.Scatter(
+                    x=df_plot.index, 
+                    y=df_plot['ZR2_Low'], 
                     mode='lines', line=dict(color='orange', width=4, dash='30px,15px'), 
-                    name=f'قاع زيرو', hoverinfo='skip'
+                    name=f'قاع زيرو (المطور)', hoverinfo='skip'
                 ), row=1, col=1)
                 
                 tv_tf = selected_interval.replace('m', '').replace('1d', 'D')
                 fig.add_annotation(
                     x=df_plot.index[-min(10, len(df_plot)-1)], y=current_zr_high,
-                    text=f"<b>ZR | Used: 300 | TF: {tv_tf}</b><br>High: {current_zr_high:.4f}<br>Low: {current_zr_low:.4f}",
-                    showarrow=False, yshift=30, font=dict(color="white", size=10, family="Courier New"),
+                    text=f"<b>ZR Basic (400,25)</b><br>High: {current_zr_high:.4f}<br>Low: {current_zr_low:.4f}<br><b>ZR Pro (300,30)</b><br>High: {current_zr2_high:.4f}<br>Low: {current_zr2_low:.4f}",
+                    showarrow=False, yshift=40, font=dict(color="white", size=10, family="Courier New"),
                     bgcolor="rgba(26, 28, 36, 0.85)", bordercolor="rgba(255, 255, 255, 0.4)", borderwidth=1, borderpad=5
                 )
                 

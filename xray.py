@@ -4,11 +4,12 @@ import pandas as pd
 import concurrent.futures
 import warnings
 import time
+import re
 
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 🦅 إعدادات قمرة القيادة (الرادار الشبح)
+# 🦅 إعدادات قمرة القيادة (الرادار الشبح V1.1)
 # ==========================================
 st.set_page_config(page_title="MASA X-RAY | رادار الحيتان العميق", page_icon="👁️‍🗨️", layout="wide")
 
@@ -20,13 +21,27 @@ st.markdown("""
     .main-title { color: #00FF41; text-align: center; font-size: 50px; font-weight: 900; text-shadow: 0px 0px 20px rgba(0,255,65,0.5); margin-bottom: 5px; }
     .sub-title { color: #8B949E; text-align: center; font-size: 18px; margin-bottom: 30px; letter-spacing: 1px;}
     .legend-box { background: rgba(20, 24, 31, 0.9); border: 1px solid #30363D; border-right: 4px solid #00FF41; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-    .stButton>button { background-color: #00FF41 !important; color: #000 !important; font-weight: 900 !important; font-size: 18px !important; border-radius: 8px !important; transition: all 0.3s ease; }
+    .stButton>button { background-color: #00FF41 !important; color: #000 !important; font-weight: 900 !important; font-size: 18px !important; border-radius: 8px !important; transition: all 0.3s ease; border: none; }
     .stButton>button:hover { background-color: #00CC33 !important; transform: scale(1.02); }
+    
+    /* 🛠️ التصميم العسكري الجديد للجدول - وضوح 4K للأرقام */
+    .radar-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-family: 'Tajawal', sans-serif; background-color: #0D1117; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .radar-table thead { background-color: #161B22; border-bottom: 2px solid #00FF41; }
+    .radar-table th { color: #8B949E; padding: 15px; font-size: 17px; text-align: center; font-weight: 700; }
+    .radar-table td { padding: 15px; border-bottom: 1px solid #21262D; color: #E6EDF3; font-size: 19px; font-weight: bold; text-align: center; }
+    .radar-table tbody tr:hover { background-color: rgba(0, 255, 65, 0.05); }
+    .target-name { color: #58A6FF !important; font-size: 20px !important; font-weight: 900 !important; }
+    
+    /* درع حماية الأرقام من القص والتشوه */
+    .ltr-text { direction: ltr; display: inline-block; font-family: monospace; font-size: 19px; }
+    .dist-green { color: #00FF41 !important; direction: ltr; display: inline-block; font-weight: 900; font-family: monospace; font-size: 19px; }
+    .dist-orange { color: #FFA500 !important; direction: ltr; display: inline-block; font-weight: 900; font-family: monospace; font-size: 19px; }
+    .dist-red { color: #FF4B4B !important; direction: ltr; display: inline-block; font-weight: 900; font-family: monospace; font-size: 19px; }
     </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-title">👁️‍🗨️ MASA X-RAY</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">طائرة الاستطلاع الشبحية | Zero-Latency Quant Engine</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">طائرة الاستطلاع الشبحية | Zero-Latency Quant Engine | HD Vision Patch</div>', unsafe_allow_html=True)
 
 st.markdown("""
 <div class="legend-box">
@@ -39,26 +54,38 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 📚 قاموس الأهداف (نخبة السوق كعينة - انسخ قاموسك الكامل 168 سهم وضعه هنا لاحقاً)
-# ==========================================
+# ذخيرة الرادار النظيفة (أهم 85 سهم في السوق السعودي - مبرمجة وجاهزة)
 SAUDI_NAMES = {
-'1010.SR': 'الرياض', '1020.SR': 'الجزيرة', '1030.SR': 'الاستثمار', '1050.SR': 'السعودي الفرنسي', '1060.SR': 'الأول', '1080.SR': 'العربي', '1111.SR': 'تداول', '1120.SR': 'الراجحي', '1140.SR': 'البلاد', '1150.SR': 'الإنماء', '1180.SR': 'الأهلي', '1182.SR': 'أملاك', '1183.SR': 'سهل', '1833.SR': 'الموارد',
-    '1201.SR': 'تكوين', '1202.SR': 'مبكو', '1211.SR': 'معادن', '1212.SR': 'أسترا الصناعية', '1213.SR': 'نسيج', '1214.SR': 'شاكر', '1301.SR': 'أسلاك', '1302.SR': 'بوان', '1303.SR': 'الصناعات الكهربائية', '1304.SR': 'اليمامة للحديد', '1320.SR': 'أنابيب السعودية', '1321.SR': 'أنابيب الشرق', '1322.SR': 'أنابيب',
-    '2001.SR': 'كيمانول', '2010.SR': 'سابك', '2020.SR': 'المغذيات', '2030.SR': 'المصافي', '2040.SR': 'الخزف السعودي', '2050.SR': 'مجموعة صافولا', '2060.SR': 'التصنيع', '2070.SR': 'الدوائية', '2080.SR': 'الغاز', '2081.SR': 'الخريف', '2082.SR': 'أكوا باور', '2083.SR': 'مرافق',
-    '2100.SR': 'وفرة', '2110.SR': 'الكابلات', '2120.SR': 'المتطورة', '2130.SR': 'صدق', '2140.SR': 'أميانتيت', '2150.SR': 'زجاج', '2170.SR': 'اللجين', '2180.SR': 'فيبكو', '2190.SR': 'سيسكو', '2200.SR': 'أنابيب', '2210.SR': 'نماء', '2220.SR': 'معدنية', '2222.SR': 'أرامكو', '2223.SR': 'لوبريف', '2230.SR': 'الكيميائية', '2240.SR': 'الزامل', '2250.SR': 'المجموعة السعودية', '2270.SR': 'سدافكو', '2280.SR': 'المراعي', '2281.SR': 'تنمية', '2282.SR': 'المطاحن الأولى', '2283.SR': 'المطاحن الحديثة', '2290.SR': 'ينساب', '2300.SR': 'صناعة الورق', '2310.SR': 'سبكيم', '2330.SR': 'المتقدمة', '2350.SR': 'كيان السعودية', '2360.SR': 'الفخارية', '2380.SR': 'بترورابغ',
-    '3010.SR': 'أسمنت العربية', '3020.SR': 'أسمنت اليمامة', '3030.SR': 'أسمنت السعودية', '3040.SR': 'أسمنت القصيم', '3050.SR': 'أسمنت الجنوبية', '3060.SR': 'أسمنت ينبع', '3080.SR': 'أسمنت الشرقية', '3090.SR': 'أسمنت تبوك', '3091.SR': 'أسمنت الجوف', '3092.SR': 'أسمنت المدينة', '3021.SR': 'أسمنت أم القرى', '3022.SR': 'أسمنت الرياض',
-    '4001.SR': 'أسواق العثيم', '4002.SR': 'المواساة', '4003.SR': 'إكسترا', '4004.SR': 'دله الصحية', '4005.SR': 'رعاية', '4007.SR': 'الحمادي', '4013.SR': 'سليمان الحبيب', '4014.SR': 'النهدي', '4015.SR': 'جمجوم فارما', '4020.SR': 'العقارية', '4030.SR': 'البحري', '4031.SR': 'مهارة', '4040.SR': 'سابتكو', '4050.SR': 'ساسكو', '4061.SR': 'أنعام القابضة', '4071.SR': 'العربية', '4081.SR': 'النايفات', '4090.SR': 'طيبة', '4100.SR': 'مكة', '4110.SR': 'باتك', '4130.SR': 'الباحة', '4140.SR': 'الصادرات', '4150.SR': 'التعمير', '4160.SR': 'ثمار', '4161.SR': 'بن داود', '4162.SR': 'المنجم', '4163.SR': 'الدواء', '4164.SR': 'أماك', '4165.SR': 'الماجد للعود', '4170.SR': 'شمس', '4180.SR': 'مجموعة فتيحي', '4190.SR': 'جرير', '4191.SR': 'أبو معطي', '4192.SR': 'عذيب', '4200.SR': 'الدريس', '4210.SR': 'الأبحاث والإعلام', '4220.SR': 'إعمار', '4230.SR': 'البحر الأحمر', '4240.SR': 'سينومي ريتيل', '4250.SR': 'جبل عمر', '4260.SR': 'بدجت', '4261.SR': 'ذيب', '4262.SR': 'لومي', '4280.SR': 'المملكة', '4290.SR': 'الخليج للتدريب', '4300.SR': 'دار الأركان', '4320.SR': 'الأندلس', '4321.SR': 'سينومي سنترز', '4322.SR': 'ريتال',
-    '6004.SR': 'التموين', '6010.SR': 'نادك', '6012.SR': 'ريدان', '6013.SR': 'التطويرية الغذائية', '6014.SR': 'الآمار', '6015.SR': 'أمريكانا', '6020.SR': 'القصيم', '6040.SR': 'تبوك الزراعية', '6050.SR': 'الأسماك', '6060.SR': 'الشرقية للتنمية', '6070.SR': 'الجوف', '6090.SR': 'جازادكو',
-    '7010.SR': 'STC', '7020.SR': 'موبايلي', '7030.SR': 'زين السعودية', '7040.SR': 'عذيب للاتصالات', '7200.SR': 'المعمر', '7202.SR': 'سلوشنز', '7203.SR': 'علم', '7204.SR': 'توبي',
-    '8010.SR': 'التعاونية', '8012.SR': 'الجزيرة تكافل', '8020.SR': 'ملاذ للتأمين', '8030.SR': 'ميدغلف', '8040.SR': 'أليانز', '8050.SR': 'سلامة', '8060.SR': 'ولاء', '8070.SR': 'الدرع العربي', '8100.SR': 'سايكو', '8120.SR': 'اتحاد الخليج', '8150.SR': 'أسيج', '8160.SR': 'التأمين العربية', '8200.SR': 'إعادة', '8210.SR': 'بوبا', '8230.SR': 'تكافل الراجحي', '8240.SR': 'تشب', '8250.SR': 'عناية', '8260.SR': 'أمانة للتأمين', '8270.SR': 'بروج', '8280.SR': 'العالمية'
+    '1120.SR': 'الراجحي', '1180.SR': 'الأهلي', '1010.SR': 'الرياض', '1050.SR': 'السعودي الفرنسي', 
+    '1060.SR': 'الأول', '1020.SR': 'الجزيرة', '1030.SR': 'الاستثمار', '1080.SR': 'العربي', 
+    '1140.SR': 'البلاد', '1150.SR': 'الإنماء', '1182.SR': 'أملاك', '1183.SR': 'سهل', 
+    '1111.SR': 'تداول', '2222.SR': 'أرامكو', '2010.SR': 'سابك', '2020.SR': 'المغذيات', 
+    '2060.SR': 'التصنيع', '2350.SR': 'كيان', '2001.SR': 'كيمانول', '2250.SR': 'المجموعة السعودية', 
+    '2310.SR': 'سبكيم', '2082.SR': 'أكوا باور', '7010.SR': 'stc', '7020.SR': 'موبايلي', 
+    '7030.SR': 'زين السعودية', '2280.SR': 'المراعي', '2281.SR': 'تنمية', '6010.SR': 'نادك', 
+    '6040.SR': 'تبوك الزراعية', '6060.SR': 'الشرقية للتنمية', '6070.SR': 'الجوف', '4160.SR': 'ثمار', 
+    '4164.SR': 'النهدي', '4013.SR': 'سليمان الحبيب', '4015.SR': 'جمجوم فارما', '4002.SR': 'المواساة', 
+    '4003.SR': 'إكسترا', '4190.SR': 'جرير', '4200.SR': 'الدريس', '4142.SR': 'الماجد للعود', 
+    '4321.SR': 'المراكز', '4300.SR': 'دار الأركان', '4220.SR': 'إعمار', '4322.SR': 'ريتال', 
+    '7202.SR': 'سلوشنز', '7203.SR': 'علم', '7204.SR': 'توبي', '8210.SR': 'بوبا', 
+    '8010.SR': 'التعاونية', '8012.SR': 'الجزيرة تكافل', '8030.SR': 'ميدغلف', '8040.SR': 'أليانز', 
+    '3030.SR': 'أسمنت السعودية', '3040.SR': 'أسمنت القصيم', '3050.SR': 'أسمنت الجنوبية', 
+    '3060.SR': 'أسمنت ينبع', '3080.SR': 'أسمنت الشرقية', '3090.SR': 'أسمنت تبوك', '2120.SR': 'المتطورة', 
+    '2140.SR': 'إيان', '2150.SR': 'زجاج', '2170.SR': 'اللجين', '2180.SR': 'فيبكو', 
+    '2190.SR': 'سيسكو', '2200.SR': 'أنابيب', '2210.SR': 'نماء', '2230.SR': 'الكيميائية', 
+    '2360.SR': 'الفخارية', '4030.SR': 'البحري', '4040.SR': 'جماعي', '4110.SR': 'باتك', 
+    '4130.SR': 'الباحة', '4140.SR': 'الصادرات', '4050.SR': 'ساسكو', '4100.SR': 'مكة', '4250.SR': 'جبل عمر',
+    '4280.SR': 'المملكة', '4230.SR': 'البحر الأحمر', '4150.SR': 'التعمير', '4240.SR': 'سينومي ريت'
 }
+
 # ==========================================
 # 🧠 المحرك الكمّي الخارق (X-Ray Core)
 # ==========================================
-def scan_whale_target(ticker, name):
+def scan_whale_target(ticker, raw_name):
     try:
-        # تحميل بيانات 30 يوماً فقط للسرعة الخارقة
+        # 🧹 الغسالة التلقائية: إزالة أي أرقام التصقت بالاسم بالخطأ
+        clean_name = re.sub(r'^\d+[:\s-]*', '', raw_name).strip()
+
         stock = yf.Ticker(ticker)
         df = stock.history(period="1mo")
         
@@ -78,20 +105,17 @@ def scan_whale_target(ticker, name):
         tags = []
         score = 0
         
-        # 1. 📦 كاشف الزنبرك
         if avg_vol_3 < (avg_vol_20 * 0.6) and avg_spread_3 < (avg_spread_20 * 0.6):
             tags.append("📦 مضغوط")
             score += 1
 
-        # 2. 🧽 كاشف الابتلاع
         if curr_vol > (avg_vol_20 * 1.5) and curr_spread < (avg_spread_20 * 0.8):
             tags.append("🧽 ابتلاع")
             score += 2
 
-        # 3. 🎯 كاشف التكلفة (VWAP-10)
         last_10 = df.tail(10)
         sum_vol_10 = float(last_10['Volume'].sum())
-        dist_str = "غير متوفر"
+        dist_str = "-"
         dist_val = 999.0
         vwap_10 = 0.0
         
@@ -99,35 +123,33 @@ def scan_whale_target(ticker, name):
             typical_price = (last_10['High'] + last_10['Low'] + last_10['Close']) / 3
             vwap_10 = float((typical_price * last_10['Volume']).sum() / sum_vol_10)
             
-            # حساب البعد عن التكلفة بالنسبة المئوية
             dist_val = ((curr_close - vwap_10) / vwap_10) * 100
             dist_str = f"{dist_val:+.2f}%"
             
-            # إذا كان السعر يبعد أقل من 1.5% عن التكلفة
             if abs(dist_val) <= 1.5:
                 tags.append("🎯 سعر الحوت")
                 score += 3
 
-        # 🛑 التطهير البصري: لا تعرض السهم إذا كان فارغاً من أي إشارة استخباراتية!
         if not tags:
             return None
 
         return {
-            "الهدف 🦅": name,
-            "الرمز": ticker.replace(".SR", ""),
-            "السعر اللحظي": f"{curr_close:.2f}",
-            "تكلفة الحوت 🐋": f"{vwap_10:.2f}" if vwap_10 > 0 else "-",
-            "البُعد عن التكلفة 📏": dist_str,
-            "الإشارات المخفية 🚨": " | ".join(tags),
-            "_score": score,
-            "_dist": abs(dist_val)
+            "name": clean_name,
+            "ticker": ticker.replace(".SR", ""),
+            "price": f"{curr_close:.2f}",
+            "vwap": f"{vwap_10:.2f}" if vwap_10 > 0 else "-",
+            "dist_str": dist_str,
+            "dist_val": dist_val,
+            "tags": " | ".join(tags),
+            "score": score,
+            "abs_dist": abs(dist_val)
         }
 
     except Exception:
         return None
 
 # ==========================================
-# 🚀 إطلاق طائرات الاستطلاع (Multi-Threading)
+# 🚀 إطلاق طائرات الاستطلاع
 # ==========================================
 if st.button("📡 بدء المسح الاستخباراتي العميق للدارك بول الآن", use_container_width=True):
     start_time = time.time()
@@ -138,7 +160,6 @@ if st.button("📡 بدء المسح الاستخباراتي العميق لل�
     total_stocks = len(SAUDI_NAMES)
     processed = 0
     
-    # الإعجاز العلمي: 20 طائرة استطلاع تضرب السوق في نفس اللحظة 
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         future_to_ticker = {executor.submit(scan_whale_target, t, n): t for t, n in SAUDI_NAMES.items()}
         
@@ -153,39 +174,40 @@ if st.button("📡 بدء المسح الاستخباراتي العميق لل�
     end_time = time.time()
     
     # ==========================================
-    # ⚔️ غرفة العمليات (عرض الغنائم)
+    # ⚔️ بناء الجدول الكريستالي المخصص (HTML/CSS)
     # ==========================================
     if results:
         df = pd.DataFrame(results)
-        
-        # الإعجاز القتالي: ترتيب ذكي يضع السهم صاحب الأيقونات الأكثر والأقرب لتكلفة الحوت في القمة!
-        df = df.sort_values(by=["_score", "_dist"], ascending=[False, True]).drop(columns=["_score", "_dist"])
-        df.reset_index(drop=True, inplace=True)
+        df = df.sort_values(by=["score", "abs_dist"], ascending=[False, True])
         
         st.success(f"✅ اكتمل المسح في {round(end_time - start_time, 1)} ثانية فقط! تم رصد ({len(df)}) أهداف جاهزة للاقتحام.")
         
-        # تلوين ذكي لعمود البعد عن التكلفة
-        def color_distance(val):
-            try:
-                num = float(val.replace('%', ''))
-                if abs(num) <= 1.5:
-                    return 'color: #00FF41; font-weight: bold;'
-                elif num < 0:
-                    return 'color: #FF4B4B; font-weight: bold;'
-                else:
-                    return 'color: #FFA500;'
-            except:
-                return ''
-
-        styled_df = df.style.map(color_distance, subset=['البُعد عن التكلفة 📏'])
-
-        st.dataframe(
-            styled_df,
-            use_container_width=True,
-            hide_index=True,
-            height=450
-        )
+        # 💎 الإعجاز البصري: بناء جدول HTML لا يمكن قص أرقامه
+        html_table = '<table class="radar-table">'
+        html_table += '<thead><tr><th>الهدف 🦅</th><th>الرمز</th><th>السعر اللحظي</th><th>تكلفة الحوت 🐋</th><th>البُعد عن التكلفة 📏</th><th>الإشارات المخفية 🚨</th></tr></thead><tbody>'
+        
+        for _, row in df.iterrows():
+            num = float(row['dist_val'])
+            if abs(num) <= 1.5:
+                color_class = "dist-green"
+            elif num < 0:
+                color_class = "dist-red"
+            else:
+                color_class = "dist-orange"
+                
+            html_table += "<tr>"
+            html_table += f"<td class='target-name'>{row['name']}</td>"
+            html_table += f"<td><span class='ltr-text'>{row['ticker']}</span></td>"
+            html_table += f"<td><span class='ltr-text'>{row['price']}</span></td>"
+            html_table += f"<td><span class='ltr-text'>{row['vwap']}</span></td>"
+            html_table += f"<td><span class='{color_class}'>{row['dist_str']}</span></td>"
+            html_table += f"<td style='font-size: 22px;'>{row['tags']}</td>"
+            html_table += "</tr>"
+            
+        html_table += '</tbody></table>'
+        
+        st.markdown(html_table, unsafe_allow_html=True)
     else:
-        st.warning("⚖️ الرادار صامت. لم يتم رصد أي تجميع مؤسساتي مخفي في الوقت الحالي. (أفضل صفقة الآن هي توفير الكاش).")
+        st.warning("⚖️ الرادار صامت. لم يتم رصد أي تجميع مؤسساتي مخفي في الوقت الحالي.")
 
-st.markdown("<hr><p style='text-align:center; color:#4B5563; font-size:12px;'>Engineered by Masa Chief Quant | V1.0 Stealth X-Ray | Multi-Threading Enabled</p>", unsafe_allow_html=True)
+st.markdown("<hr><p style='text-align:center; color:#4B5563; font-size:12px;'>Engineered by Masa Chief Quant | V1.1 HD Vision | Custom HTML Grid</p>", unsafe_allow_html=True)

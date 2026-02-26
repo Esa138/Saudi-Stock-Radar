@@ -92,22 +92,15 @@ SAUDI_NAMES = {
 
 # 🇺🇸 أقوى 60 سهم في وول ستريت (مجهزة بالكامل)
 US_NAMES = {
-    # العمالقة والتكنولوجيا (Magnificent 7 & Tech)
-    'AAPL': 'Apple', 'MSFT': 'Microsoft', 'GOOGL': 'Alphabet', 'META': 'Meta', 'AMZN': 'Amazon', 'NFLX': 'Netflix', 'CRM': 'Salesforce', 'PLTR': 'Palantir',
-    # الذكاء الاصطناعي وأشباه الموصلات (AI & Semis)
-    'NVDA': 'NVIDIA', 'AMD': 'AMD', 'TSM': 'TSMC', 'AVGO': 'Broadcom', 'INTC': 'Intel', 'QCOM': 'Qualcomm', 'SMCI': 'Super Micro', 'ARM': 'ARM Holdings', 'MU': 'Micron',
-    # الكريبتو والمخاطر العالية (Crypto)
-    'COIN': 'Coinbase', 'MSTR': 'MicroStrategy', 'MARA': 'Marathon', 'RIOT': 'Riot', 'HOOD': 'Robinhood', 'CLSK': 'CleanSpark',
-    # السيارات الكهربائية (EVs)
-    'TSLA': 'Tesla', 'RIVN': 'Rivian', 'LCID': 'Lucid Group',
-    # القطاع المالي (Finance)
-    'JPM': 'JPMorgan', 'BAC': 'Bank of America', 'V': 'Visa', 'MA': 'Mastercard', 'GS': 'Goldman Sachs', 'PYPL': 'PayPal', 'SQ': 'Block',
-    # الرعاية الصحية (Healthcare)
-    'LLY': 'Eli Lilly', 'NVO': 'Novo Nordisk', 'UNH': 'UnitedHealth', 'JNJ': 'Johnson & Johnson', 'MRK': 'Merck', 'PFE': 'Pfizer',
-    # التجزئة والترفيه (Retail & Consumer)
-    'WMT': 'Walmart', 'COST': 'Costco', 'DIS': 'Disney', 'NKE': 'Nike', 'UBER': 'Uber', 'ABNB': 'Airbnb', 'SBUX': 'Starbucks',
-    # الصناعة والطاقة (Industry & Energy)
-    'XOM': 'Exxon Mobil', 'CVX': 'Chevron', 'BA': 'Boeing', 'CAT': 'Caterpillar', 'GE': 'General Electric', 'LMT': 'Lockheed Martin'
+    'AAPL': 'Apple', 'MSFT': 'Microsoft', 'NVDA': 'NVIDIA', 'GOOGL': 'Alphabet', 'AMZN': 'Amazon', 'META': 'Meta', 'TSLA': 'Tesla', 'SMCI': 'Super Micro', 'DELL': 'Dell Technologies',
+    'AMD': 'AMD', 'AVGO': 'Broadcom', 'TSM': 'TSMC', 'MU': 'Micron', 'ASML': 'ASML Holding', 'ARM': 'ARM Holdings', 'LRCX': 'Lam Research', 'AMAT': 'Applied Materials', 'INTC': 'Intel', 'QCOM': 'Qualcomm', 'TXN': 'Texas Instruments', 'KLAC': 'KLA Corp', 'MRVL': 'Marvell', 'NXPI': 'NXP Semi',
+    'CRM': 'Salesforce', 'ADBE': 'Adobe', 'ORCL': 'Oracle', 'NOW': 'ServiceNow', 'SNOW': 'Snowflake', 'PLTR': 'Palantir', 'DDOG': 'Datadog', 'MDB': 'MongoDB', 'TEAM': 'Atlassian', 'CDNS': 'Cadence Design', 'SNPS': 'Synopsys', 'SHOP': 'Shopify', 'UBER': 'Uber', 'NET': 'Cloudflare', 'CRWD': 'CrowdStrike', 'PANW': 'Palo Alto', 'FTNT': 'Fortinet', 'ZS': 'Zscaler', 'HUBS': 'HubSpot',
+    'WMT': 'Walmart', 'HD': 'Home Depot', 'COST': 'Costco', 'MCD': 'McDonalds', 'SBUX': 'Starbucks', 'NKE': 'Nike', 'LULU': 'Lululemon', 'LOW': 'Lowe\'s', 'PG': 'Procter and Gamble', 'KO': 'Coca-Cola', 'PEP': 'PepsiCo', 'TGT': 'Target', 'CMG': 'Chipotle', 'TJX': 'TJX Companies',
+    'LLY': 'Eli Lilly', 'JNJ': 'Johnson and Johnson', 'ABBV': 'AbbVie', 'MRK': 'Merck', 'PFE': 'Pfizer', 'ISRG': 'Intuitive Surg', 'VRTX': 'Vertex Pharma', 'REGN': 'Regeneron', 'AMGN': 'Amgen', 'GILD': 'Gilead Sciences', 'TMO': 'Thermo Fisher', 'DHR': 'Danaher', 'ABT': 'Abbott', 'SYK': 'Stryker', 'ZTS': 'Zoetis',
+    'CAT': 'Caterpillar', 'BA': 'Boeing', 'GE': 'General Electric', 'XOM': 'Exxon Mobil', 'CVX': 'Chevron', 'SLB': 'Schlumberger', 'COP': 'ConocoPhillips', 'RIVN': 'Rivian', 'LCID': 'Lucid Motors', 'F': 'Ford', 'GM': 'General Motors', 'UNP': 'Union Pacific', 'UPS': 'UPS', 'FDX': 'FedEx', 'DE': 'Deere and Co', 'LMT': 'Lockheed Martin', 'RTX': 'RTX Corp', 'FSLR': 'First Solar', 'ENPH': 'Enphase Energy', 'NEE': 'NextEra Energy',
+    'NFLX': 'Netflix', 'VZ': 'Verizon', 'T': 'AT and T', 'TMUS': 'T-Mobile', 'SPOT': 'Spotify', 'BKNG': 'Booking', 'ABNB': 'Airbnb',
+    'COIN': 'Coinbase', 'MSTR': 'MicroStrategy', 'MARA': 'Marathon Digital', 'RIOT': 'Riot Platforms', 'CLSK': 'CleanSpark', 'HUT': 'Hut 8',
+    'SPUS': 'S and P Sharia ETF', 'HLAL': 'Wahed FTSE Sharia ETF', 'UMMA': 'Wahed Dow Jones Islamic ETF', 'SPSK': 'SP Funds Sukuk ETF', 'SMH': 'Semiconductor ETF', 'SOXX': 'iShares Semi ETF', 'XLK': 'Technology ETF', 'XLV': 'Health Care ETF', 'XLE': 'Energy ETF', 'XLI': 'Industrial ETF'
 }
 
 # 🏢 محلل الشفرات الذكي للقطاعات (للسوقين)
